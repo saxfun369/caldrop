@@ -1,0 +1,4 @@
+.DS_Store
+
+# クライアントIDが入る設定ファイル。Git には上げない
+js/config.js
