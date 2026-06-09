@@ -3,19 +3,26 @@
 
 /* CSS変数：色やサイズを一箇所で管理（Pythonの定数定義に相当） */
 :root {
-  --bg: #f9f9f7;
+  /* ベース */
+  --bg: #f8f7f4;        /* 暖色オフホワイト（純白を避けた落ち着き） */
   --surface: #ffffff;
-  --border: #e5e4de;
-  --text: #1a1a18;
-  --text-sub: #6b6b66;
-  --accent: #1a1a18;
+  --border: #e6e5df;
+  /* テキスト：Notion の #37352f を参考にした暖色ダークグレー */
+  --text: #37352f;
+  --text-sub: #787774;  /* Notion セカンダリ。明瞭に読める中間グレー */
+  --code-bg: #f0efea;   /* カード上でほんのり浮く程度の控えめグレー */
+  /* プライマリボタン */
+  --accent: #37352f;
   --accent-fg: #ffffff;
-  --success-bg: #eaf3de;
-  --success-fg: #3b6d11;
-  --info-bg: #e6f1fb;
-  --info-fg: #185fa5;
-  --danger-bg: #fcebeb;
-  --danger-fg: #a32d2d;
+  /* 意味色（Radix UI / GitHub Primer を参考） */
+  --success-bg: #ecf5e1;
+  --success-fg: #2e6e24;
+  --info-bg: #e8f1fb;
+  --info-fg: #1a56a0;
+  --danger-bg: #fbeaea;
+  --danger-fg: #b82b2b;
+  --warn-bg: #fef9ec;
+  --warn-fg: #92610a;
   --radius: 10px;
   --radius-sm: 6px;
 }
@@ -23,19 +30,22 @@
 /* ダークモード：OSの設定に応じて自動で色を切り替え */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #1a1a18;
-    --surface: #242422;
-    --border: #363632;
-    --text: #f0efe8;
-    --text-sub: #9a9a92;
-    --accent: #f0efe8;
-    --accent-fg: #1a1a18;
-    --success-bg: #173404;
-    --success-fg: #c0dd97;
-    --info-bg: #042c53;
-    --info-fg: #b5d4f4;
-    --danger-bg: #501313;
-    --danger-fg: #f7c1c1;
+    --bg: #1b1b19;
+    --surface: #242420;
+    --border: #383834;
+    --text: #eeede6;      /* 暖色ニアホワイト（純白を避けた柔らかさ） */
+    --text-sub: #8a8982;  /* ライトより明るく、十分読める */
+    --code-bg: #2e2e2b;
+    --accent: #eeede6;
+    --accent-fg: #1b1b19;
+    --success-bg: #1b3d0f;
+    --success-fg: #9dd186;
+    --info-bg: #0d2c4c;
+    --info-fg: #86bcf2;
+    --danger-bg: #451515;
+    --danger-fg: #f5a3a3;
+    --warn-bg: #362800;
+    --warn-fg: #e8b84b;
   }
 }
 
@@ -49,7 +59,7 @@ body {
 .page { max-width: 680px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
 
 .logo { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 0.25rem; }
-.logo span { opacity: 0.35; }
+.logo span { color: #2e9e5e; }
 .tagline { font-size: 14px; color: var(--text-sub); margin-bottom: 2.5rem; }
 
 .label { font-size: 13px; font-weight: 500; color: var(--text-sub); margin-bottom: 6px; display: block; }
@@ -74,6 +84,7 @@ textarea::placeholder { color: var(--text-sub); opacity: 0.6; }
 .btn-row { display: flex; gap: 8px; margin: 12px 0 24px; }
 .btn {
   font-size: 14px;
+  line-height: 1.4;
   padding: 9px 20px;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -89,8 +100,9 @@ textarea::placeholder { color: var(--text-sub); opacity: 0.6; }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .result-msg { padding: 12px 16px; border-radius: var(--radius-sm); font-size: 14px; margin-bottom: 16px; display: none; }
-.result-ok { background: var(--success-bg); color: var(--success-fg); }
-.result-err { background: var(--danger-bg); color: var(--danger-fg); }
+.result-ok   { background: var(--success-bg); color: var(--success-fg); }
+.result-err  { background: var(--danger-bg);  color: var(--danger-fg); }
+.result-warn { background: var(--warn-bg);    color: var(--warn-fg); }
 
 .section-label { font-size: 13px; font-weight: 500; color: var(--text-sub); }
 .events-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
@@ -253,6 +265,16 @@ textarea::placeholder { color: var(--text-sub); opacity: 0.6; }
 .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 
 .bulk-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.btn-reset { margin-left: auto; }
+
+.btn-add-event {
+  width: 100%;
+  border-style: dashed;
+  color: var(--text-sub);
+  background: transparent;
+  margin-top: 4px;
+}
+.btn-add-event:hover { background: var(--bg); color: var(--text); }
 .count-label { font-size: 13px; color: var(--text-sub); }
 .hint { font-size: 12px; color: var(--text-sub); margin-top: 6px; opacity: 0.7; }
 
@@ -272,6 +294,11 @@ textarea::placeholder { color: var(--text-sub); opacity: 0.6; }
   text-decoration: none;
 }
 
+.footer-ver {
+  margin-left: 12px;
+  opacity: 0.45;
+}
+
 .footer {
   margin-top: 4rem;
   padding-top: 1.5rem;
@@ -289,8 +316,8 @@ textarea::placeholder { color: var(--text-sub); opacity: 0.6; }
   margin-bottom: 2rem;
 }
 .how-to h2 { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
-.how-to ol { font-size: 13px; color: var(--text-sub); padding-left: 18px; line-height: 2; }
-.how-to code { font-family: monospace; background: var(--bg); padding: 1px 6px; border-radius: 3px; font-size: 12px; white-space: nowrap; }
+.how-to ol { font-size: 13px; color: var(--text); padding-left: 18px; line-height: 2; }
+.how-to code { font-family: monospace; background: var(--code-bg); padding: 1px 6px; border-radius: 3px; font-size: 12px; white-space: nowrap; }
 
 /* 書き方の例（折りたたみ） */
 .ex-details { margin-top: 14px; }
@@ -333,13 +360,13 @@ details[open] .ex-summary::before { transform: rotate(90deg); }
 .ex-prose dt:first-child { border-top: none; padding-top: 0; margin-top: 0; }
 .ex-prose dd {
   font-size: 13px;
-  color: var(--text-sub);
+  color: var(--text);
   line-height: 1.75;
   margin-left: 0;
 }
 .ex-prose code {
   font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
-  background: var(--bg);
+  background: var(--code-bg);
   color: var(--text);
   padding: 1px 6px;
   border-radius: 3px;

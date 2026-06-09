@@ -81,6 +81,12 @@ function renderEvents() {
   list.appendChild(cards);
   displayOrder.forEach(i => renderCard(i, true));
 
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn btn-add-event';
+  addBtn.textContent = '＋ 予定を追加';
+  addBtn.onclick = addNewEvent;
+  list.appendChild(addBtn);
+
   document.getElementById('bulkSection').style.display = 'block';
   resetRegisterBtn();
   showRegisterResult('', '');
@@ -248,11 +254,12 @@ function updateCount() {
 /**
  * 成功・エラーメッセージを表示する。msg が空なら非表示にする
  */
-function showResult(msg, type) {
+function showResult(msg, type, html) {
   const el = document.getElementById('resultMsg');
   if (!msg) { el.style.display = 'none'; return; }
-  el.className = 'result-msg ' + (type === 'ok' ? 'result-ok' : 'result-err');
-  el.textContent = msg;
+  const cls = type === 'ok' ? 'result-ok' : type === 'warn' ? 'result-warn' : 'result-err';
+  el.className = 'result-msg ' + cls;
+  if (html) { el.innerHTML = msg; } else { el.textContent = msg; }
   el.style.display = 'block';
 }
 

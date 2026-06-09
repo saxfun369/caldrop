@@ -15,37 +15,39 @@
 <body>
 <div class="page">
   <div class="logo">CalDrop<span>.</span></div>
-  <p class="tagline">自由な書き方でまとめて入力 → Googleカレンダーに一括登録</p>
+  <p class="tagline">メモ感覚で書くだけ。Googleカレンダーに一括登録。</p>
 
   <div class="how-to">
     <h2>使い方</h2>
     <ol>
       <li>予定を自由に入力（1行1予定）</li>
-      <li>「解析する」をクリック</li>
+      <li><code>解析する</code> をクリック</li>
       <li>内容を確認・必要なら編集</li>
-      <li>「Googleカレンダーに登録」→ 初回のみ Google 認証</li>
+      <li><code>Googleカレンダーに登録</code> をクリック</li>
     </ol>
     <details class="ex-details">
       <summary class="ex-summary">書き方のルールを見る</summary>
       <dl class="ex-prose">
         <dt>日付</dt>
-        <dd><code>8月1日</code> でも <code>8/1</code> でも読み取ります。<code>今日</code> <code>明日</code> <code>明後日</code> も使えます。<br>
-        本日より前の日付は翌年に自動補正されます。<br>意図的に過去の日付を使いたい場合は <code>2025/4/5</code> のように年を明記してください。</dd>
+        <dd><code>8月1日</code><code>8/1</code> のどちらの形式でも読み取ります。<br>
+        <code>今日</code> <code>明日</code> <code>昨日</code> などの相対表現も使えます。<br>
+        過去の日付は自動的に翌年に補正されます<br>
+        （例：6月に <code>4/5</code> と入力すると来年の4月5日になります）。<br>
+        過去の予定を登録したい場合は <code>2025/4/5</code> のように年を明記してください。</dd>
 
         <dt>時刻</dt>
-        <dd><code>10:00–15:00</code> <code>15時ー17時</code> <code>12から15時</code> など、区切り文字の種類は問いません。<br>
-        開始時刻のみの場合、終了時刻は1時間後に自動設定されます。</dd>
+        <dd>　 <code>15時から17時</code> <code>17 21</code> など、区切り文字の種類は問いません。<br>
+        開始時間のみ指定した場合、終了は1時間後になります。</dd>
 
         <dt>終日・複数日</dt>
-        <dd>時刻なしで書くと終日イベントになります。<br>
-        <code>8/20-22 旅行</code> のように日付範囲を書くと複数日になります。</dd>
+        <dd>時刻の記載がない場合は終日の予定として登録されます。<br>
+        <code>8/20-22</code> のように範囲指定で複数日指定が可能です。</dd>
 
         <dt>場所</dt>
-        <dd><code>@渋谷オフィス</code> のように @ に続けて書くか、<br>
-        <code>会場：ホテル名</code> <code>場所：駅名</code> のようにキーワード＋コロンで指定します。</dd>
+        <dd><code>@渋谷オフィス</code> のように @ に続けて書くか、<code>会場：ホテル名</code> , <code>場所:駅名</code> のようにキーワード＋コロンで指定できます。</dd>
 
         <dt>説明</dt>
-        <dd><code>（持ち物：PC）</code> のように丸括弧で囲んだテキストが説明欄に登録されます。</dd>
+        <dd><code>（持ち物：PC）</code> <code>(スピーチあり)</code> のように丸括弧で囲むと説明として登録されます。</dd>
       </dl>
     </details>
   </div>
@@ -62,7 +64,6 @@
 
   <div class="btn-row">
     <button class="btn btn-primary" onclick="parseEvents()">解析する</button>
-    <button class="btn" onclick="clearAll()">クリア</button>
     <!-- デバッグ用：後で削除 -->
     <button class="btn" onclick="fillDebugText()" style="color:var(--info-fg);border-color:var(--info-fg)">デバッグ入力</button>
   </div>
@@ -79,14 +80,15 @@
           Googleカレンダーに登録
         </button>
         <span class="count-label" id="selectedCount"></span>
+        <button class="btn btn-reset" onclick="clearAll()">リセット</button>
       </div>
       <a id="openCalendarBtn" href="https://calendar.google.com/" target="_blank"
          class="btn btn-open-cal" style="display:none">Googleカレンダーを確認する ↗</a>
-      <p class="hint">※ 初回のみ Google アカウントの認証が必要です</p>
+      <p class="hint">※ 必要に応じて Google 認証を実施</p>
     </div>
   </div>
 
-  <div class="footer">CalDrop — 完全無料・登録不要・データ保存なし</div>
+  <div class="footer">CalDrop — 完全無料・登録不要・データ保存なし<span class="footer-ver">v0.2.0</span></div>
 </div>
 
 <!-- JS 読み込み順：依存関係の順番に並べる -->

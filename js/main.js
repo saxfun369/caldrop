@@ -15,19 +15,61 @@ let displayOrder  = [];
  */
 function parseEvents() {
   const text = document.getElementById('inputText').value.trim();
-  if (!text) return;
+  if (!text) {
+    showResult('予定を入力してください。', 'err');
+    return;
+  }
 
   const year = new Date().getFullYear().toString();
-  parsedEvents = text.split(/\n/).map(l => parseLine(l, year)).filter(Boolean);
-  displayOrder  = parsedEvents.map((_, i) => i); // 初期は入力順
+  const nonEmpty = text.split(/\n/).filter(l => l.trim());
+  const results  = nonEmpty.map(l => ({ line: l, event: parseLine(l, year) }));
+
+  parsedEvents  = results.filter(r => r.event).map(r => r.event);
+  displayOrder  = parsedEvents.map((_, i) => i);
 
   if (!parsedEvents.length) {
     showResult('予定を認識できませんでした。書き方を確認してください。', 'err');
     return;
   }
 
-  showResult('', '');
+  const failedLines = results.filter(r => !r.event).map(r => r.line);
+  if (failedLines.length > 0) {
+    const items = failedLines.map(l => `<li>${escHtml(l)}</li>`).join('');
+    showResult(
+      `${failedLines.length}行を認識できませんでした。認識できた予定のみ表示しています。`
+      + `<ul style="margin-top:6px;padding-left:1.4em;opacity:0.85">${items}</ul>`,
+      'warn', true
+    );
+  } else {
+    showResult('', '');
+  }
+
   renderEvents();
+}
+
+function addNewEvent() {
+  const today = new Date();
+  const dateStr = today.getFullYear() + '-'
+    + String(today.getMonth() + 1).padStart(2, '0') + '-'
+    + String(today.getDate()).padStart(2, '0');
+
+  parsedEvents.push({
+    title: '', date: dateStr, endDate: null,
+    startTime: null, endTime: null,
+    location: null, description: null, allDay: true,
+  });
+
+  const i = parsedEvents.length - 1;
+  displayOrder.push(i);
+
+  const cardsList = document.getElementById('cardsList');
+  const card = document.createElement('div');
+  card.id = 'card-' + i;
+  cardsList.appendChild(card);
+
+  renderCard(i, true);  // チェックボックスを含む初期描画が必要
+  editEvent(i);
+  updateCount();
 }
 
 // ===== デバッグ用：後で削除 =====
@@ -74,10 +116,16 @@ function fillDebugText() {
     '10月3日 09:00-17:00 研修 @福岡オフィス （持ち物：PC・名刺）',
     '11月20日 10:00-17:00 視察 京都 （事前にレポート提出）',
     '',
-    // 相対日付
+    // 相対日付（過去）
+    '一昨昨日 終日 3日前',
+    '一昨日 14:00 一昨日',
+    '昨日 10:00-11:00 昨日の会議',
+    // 相対日付（今日・未来）
     '今日 15:00 歯医者',
+    '本日 13:00 ほんじつ',
     '明日 10:00-11:00 打ち合わせ @渋谷',
     '明後日 終日 有給',
+    '明々後日 10:00 しあさって',
     '',
     // 年またぎ・過去日付の補正確認
     '1/15 10:00-11:00 年なし→来年になるはず',
