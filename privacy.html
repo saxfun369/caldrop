@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>プライバシーポリシー | CalDrop</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .privacy-body { max-width: 680px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+    .privacy-body h1 { font-size: 20px; font-weight: 700; margin-bottom: 0.5rem; }
+    .privacy-body .updated { font-size: 13px; color: var(--text-sub); margin-bottom: 2.5rem; }
+    .privacy-body h2 { font-size: 14px; font-weight: 600; margin-top: 2rem; margin-bottom: 0.5rem; }
+    .privacy-body p, .privacy-body li { font-size: 14px; line-height: 1.8; }
+    .privacy-body ul { padding-left: 1.4em; margin-top: 0.4rem; }
+    .privacy-body a { color: var(--text); }
+    .back-link { font-size: 13px; color: var(--text-sub); text-decoration: none; display: inline-block; margin-bottom: 2rem; }
+    .back-link:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+<div class="privacy-body">
+  <a href="/" class="back-link">← CalDrop に戻る</a>
+  <h1>プライバシーポリシー</h1>
+  <p class="updated">最終更新：2026年6月10日</p>
+
+  <h2>1. 収集する情報</h2>
+  <p>CalDrop は、ユーザーの個人情報・入力データを一切収集・保存しません。</p>
+
+  <h2>2. Google アカウント連携について</h2>
+  <p>CalDrop は Google Calendar API を使用して、ユーザーのGoogleカレンダーに予定を登録します。この目的のために以下のスコープを使用します。</p>
+  <ul>
+    <li><code>https://www.googleapis.com/auth/calendar.events</code> — カレンダーへの予定追加</li>
+  </ul>
+  <p>取得したアクセストークンはユーザーのブラウザ（localStorage）にのみ保存されます。CalDrop のサーバーには送信・保存されません。</p>
+
+  <h2>3. データの保存・共有</h2>
+  <p>CalDrop はサーバーを持たない完全フロントエンドのアプリケーションです。ユーザーが入力したテキストや解析結果は、ブラウザ内でのみ処理され、外部に送信されることはありません。</p>
+
+  <h2>4. 第三者へのデータ提供</h2>
+  <p>ユーザーのデータを第三者に提供・販売することはありません。</p>
+
+  <h2>5. お問い合わせ</h2>
+  <p>プライバシーポリシーに関するご質問は <a href="mailto:caldrop.contact@gmail.com">caldrop.contact@gmail.com</a> までご連絡ください。</p>
+
+  <div class="footer" style="margin-top:4rem;padding-top:1.5rem;border-top:1px solid var(--border);font-size:12px;color:var(--text-sub);text-align:center;">
+    CalDrop — 完全無料・登録不要・データ保存なし
+  </div>
+</div>
+</body>
+</html>
