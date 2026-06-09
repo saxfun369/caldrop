@@ -85,7 +85,7 @@ caldrop/
 - config.js はフロントエンドのみで使用し、承認済み JavaScript 生成元（オリジン）による保護があるため Git 管理内で問題なし
 - 承認済み JavaScript 生成元：`http://127.0.0.1:5500`（ローカル）、Vercel URL（本番）
 - アプリは「テスト」モード。他ユーザーに公開するときのみ「本番環境」への移行が必要
-- テストユーザー：`caldrop.contact@gmail.com`
+- テストユーザー：登録済み（非公開）
 
 ## 認証の仕組み
 - Google Identity Services（GIS）の OAuth トークンモデルを使用
