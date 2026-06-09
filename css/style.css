@@ -56,7 +56,6 @@ body {
 
 textarea {
   width: 100%;
-  min-height: 160px;
   font-size: 14px;
   padding: 14px;
   border: 1px solid var(--border);
@@ -93,8 +92,38 @@ textarea::placeholder { color: var(--text-sub); opacity: 0.6; }
 .result-ok { background: var(--success-bg); color: var(--success-fg); }
 .result-err { background: var(--danger-bg); color: var(--danger-fg); }
 
-.section-label { font-size: 13px; font-weight: 500; color: var(--text-sub); margin-bottom: 10px; }
+.section-label { font-size: 13px; font-weight: 500; color: var(--text-sub); }
 .events-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+
+/* 件数ラベルとソートトグルを横並びにするヘッダー行 */
+.events-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+/* 入力順 / 日付順 のセグメントコントロール */
+.sort-toggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.sort-btn {
+  font-size: 12px;
+  padding: 4px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-sub);
+  cursor: pointer;
+  font-weight: 500;
+}
+.sort-btn.sort-active { background: var(--accent); color: var(--accent-fg); }
+.sort-btn:not(.sort-active):hover { background: var(--bg); }
 
 .event-card {
   background: var(--surface);
@@ -113,6 +142,94 @@ textarea::placeholder { color: var(--text-sub); opacity: 0.6; }
 .event-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
 .event-meta { font-size: 13px; color: var(--text-sub); display: flex; gap: 14px; flex-wrap: wrap; }
 .event-meta span { display: flex; align-items: center; gap: 4px; }
+
+/* カード右側のボタン列（編集 + 個別追加） */
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+  flex-shrink: 0;
+}
+
+/* 編集ボタン */
+.edit-btn {
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-sub);
+  cursor: pointer;
+  white-space: nowrap;
+  font-weight: 500;
+  text-align: center;
+}
+.edit-btn:hover { background: var(--bg); }
+
+/* 編集モード中のカード */
+.event-card.editing { align-items: flex-start; }
+
+/* 編集フォーム全体 */
+.event-edit-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 0;
+}
+
+/* 各フィールド行 */
+.edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.edit-label {
+  font-size: 12px;
+  color: var(--text-sub);
+  min-width: 52px;
+  flex-shrink: 0;
+}
+
+/* テキスト・場所・説明の入力欄 */
+.edit-input {
+  flex: 1;
+  min-width: 120px;
+  font-size: 13px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+}
+.edit-input:focus { border-color: var(--text); }
+
+/* 日付・時刻の小さめ入力欄 */
+.edit-input-sm {
+  font-size: 13px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+}
+.edit-input-sm:focus { border-color: var(--text); }
+
+.edit-sep { font-size: 13px; color: var(--text-sub); }
+
+/* 時刻入力のまとまり */
+.edit-time-wrap { display: flex; align-items: center; gap: 8px; }
+
+/* 保存・キャンセルボタン行 */
+.edit-actions { display: flex; gap: 8px; margin-top: 2px; }
+
+/* 小さいボタン（保存・キャンセル用） */
+.btn-sm { font-size: 13px; padding: 6px 16px; }
 
 .add-btn {
   font-size: 12px;
@@ -135,39 +252,9 @@ textarea::placeholder { color: var(--text-sub); opacity: 0.6; }
 
 .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 
-/* how-to 内のポップアップ事前許可ボタン行 */
-.popup-setup-row { margin-top: 12px; }
-
-/* モード切り替えラジオボタン */
-.mode-toggle { display: flex; gap: 20px; margin-bottom: 12px; }
-.mode-label {
-  font-size: 13px;
-  color: var(--text-sub);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  user-select: none;
-}
-.mode-label input { accent-color: var(--accent); cursor: pointer; }
-
 .bulk-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .count-label { font-size: 13px; color: var(--text-sub); }
 .hint { font-size: 12px; color: var(--text-sub); margin-top: 6px; opacity: 0.7; }
-
-/* ポップアップブロック時のメッセージ */
-.popup-blocked {
-  background: var(--danger-bg);
-  color: var(--danger-fg);
-  border-radius: var(--radius-sm);
-  padding: 14px 16px;
-  margin-top: 12px;
-  font-size: 13px;
-  line-height: 1.6;
-}
-.popup-blocked-title { font-weight: 600; margin-bottom: 8px; }
-.popup-blocked ol { padding-left: 20px; margin: 6px 0 10px; }
-.popup-blocked li { margin-bottom: 2px; }
 
 .footer {
   margin-top: 4rem;
@@ -187,4 +274,58 @@ textarea::placeholder { color: var(--text-sub); opacity: 0.6; }
 }
 .how-to h2 { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
 .how-to ol { font-size: 13px; color: var(--text-sub); padding-left: 18px; line-height: 2; }
-.how-to code { font-family: monospace; background: var(--bg); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+.how-to code { font-family: monospace; background: var(--bg); padding: 1px 6px; border-radius: 3px; font-size: 12px; white-space: nowrap; }
+
+/* 書き方の例（折りたたみ） */
+.ex-details { margin-top: 14px; }
+
+.ex-summary {
+  font-size: 12px;
+  color: var(--text-sub);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.ex-summary::-webkit-details-marker { display: none; }
+.ex-summary::before {
+  content: '▶';
+  font-size: 9px;
+  transition: transform 0.15s;
+  display: inline-block;
+}
+details[open] .ex-summary::before { transform: rotate(90deg); }
+
+.ex-prose {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+}
+.ex-prose dt {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  margin-bottom: 5px;
+}
+.ex-prose dt:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+.ex-prose dd {
+  font-size: 13px;
+  color: var(--text-sub);
+  line-height: 1.75;
+  margin-left: 0;
+}
+.ex-prose code {
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  background: var(--bg);
+  color: var(--text);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+}

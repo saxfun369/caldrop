@@ -22,18 +22,43 @@
     <ol>
       <li>予定を自由に入力（1行1予定）</li>
       <li>「解析する」をクリック</li>
-      <li>内容を確認してチェックを調整</li>
+      <li>内容を確認・必要なら編集</li>
       <li>「Googleカレンダーに登録」→ 初回のみ Google 認証</li>
     </ol>
-    <p style="font-size:12px;color:var(--text-sub);margin-top:8px">例：<code>4月20日 10:00-15:00 散髪</code>　<code>4/25-27 旅行 東京</code>　<code>4月14日 休み</code></p>
+    <details class="ex-details">
+      <summary class="ex-summary">書き方のルールを見る</summary>
+      <dl class="ex-prose">
+        <dt>日付</dt>
+        <dd><code>8月1日</code> でも <code>8/1</code> でも読み取ります。<code>今日</code> <code>明日</code> <code>明後日</code> も使えます。<br>
+        本日より前の日付は翌年に自動補正されます。<br>意図的に過去の日付を使いたい場合は <code>2025/4/5</code> のように年を明記してください。</dd>
+
+        <dt>時刻</dt>
+        <dd><code>10:00–15:00</code> <code>15時ー17時</code> <code>12から15時</code> など、区切り文字の種類は問いません。<br>
+        開始時刻のみの場合、終了時刻は1時間後に自動設定されます。</dd>
+
+        <dt>終日・複数日</dt>
+        <dd>時刻なしで書くと終日イベントになります。<br>
+        <code>8/20-22 旅行</code> のように日付範囲を書くと複数日になります。</dd>
+
+        <dt>場所</dt>
+        <dd><code>@渋谷オフィス</code> のように @ に続けて書くか、<br>
+        <code>会場：ホテル名</code> <code>場所：駅名</code> のようにキーワード＋コロンで指定します。</dd>
+
+        <dt>説明</dt>
+        <dd><code>（持ち物：PC）</code> のように丸括弧で囲んだテキストが説明欄に登録されます。</dd>
+      </dl>
+    </details>
   </div>
 
   <label class="label" for="inputText">予定テキスト</label>
-  <textarea id="inputText" placeholder="4月20日 10:00-15:00 散髪
-4月23日 11:00〜14:00 ランチ
-4/23 15時ー17時 ジム
-4/25-27 旅行 東京
-4月14日 休み"></textarea>
+  <textarea id="inputText" rows="9" placeholder="8月1日 10:00-15:00 散髪
+8/3 15時から17時 ジム
+8/20-22 夏休み旅行
+8月10日 健康診断
+今日 15:00 歯医者
+明日 10:00-11:00 打ち合わせ @渋谷オフィス
+9/10 結婚式 会場：ホテルグランド （スピーチあり）
+2025/4/5 14:00 過去の予定を登録する場合は年を明記"></textarea>
 
   <div class="btn-row">
     <button class="btn btn-primary" onclick="parseEvents()">解析する</button>

@@ -8,9 +8,23 @@
  *   4. registerAllEvents() → 予定を1件ずつ Google Calendar REST API に POST する
  */
 
-let tokenClient  = null;
-let accessToken  = null;
-let tokenExpiry  = 0; // トークンの有効期限（ミリ秒のタイムスタンプ）
+let tokenClient       = null;
+let accessToken       = null;
+let tokenExpiry       = 0;   // トークンの有効期限（ミリ秒のタイムスタンプ）
+let silentAuthTimeout = null; // スマホ対応：サイレント認証の無応答を検知するタイマー
+
+/**
+ * localStorage に保存したトークンをページ読み込み時に復元する
+ * 有効なトークンが残っていれば requestAccessToken を呼ばずに済むのでポップアップが出ない
+ */
+function initTokenFromStorage() {
+  const stored = localStorage.getItem('caldrop_token');
+  const expiry = parseInt(localStorage.getItem('caldrop_token_expiry') || '0', 10);
+  if (stored && Date.now() < expiry) {
+    accessToken = stored;
+    tokenExpiry = expiry;
+  }
+}
 
 /**
  * GIS（Google Identity Services）トークンクライアントを初期化する
@@ -29,6 +43,9 @@ function initGoogleAuth() {
  * 認証完了後に Google から呼ばれるコールバック
  */
 function handleTokenResponse(response) {
+  // サイレント認証のタイムアウトタイマーをキャンセル（応答が来たので不要）
+  if (silentAuthTimeout) { clearTimeout(silentAuthTimeout); silentAuthTimeout = null; }
+
   if (response.error) {
     // サイレント取得に失敗した場合（Google からログアウトしているなど）
     // → 通常フロー（アカウント選択あり）に自動でフォールバックする
@@ -46,9 +63,11 @@ function handleTokenResponse(response) {
   accessToken = response.access_token;
   // expires_in は秒数（通常 3600 = 1時間）。60秒前に期限切れ扱いにしてバッファを持たせる
   tokenExpiry = Date.now() + (response.expires_in - 60) * 1000;
-  // 「認証済み」フラグを localStorage に保存する
-  // localStorage はブラウザに永続保存される（Python の pickle で保存するイメージ）
+  // トークン本体と有効期限を localStorage に保存する
+  // → ページ再読み込み後も有効期限内ならポップアップなしで再利用できる
   localStorage.setItem('caldrop_authorized', '1');
+  localStorage.setItem('caldrop_token', accessToken);
+  localStorage.setItem('caldrop_token_expiry', tokenExpiry.toString());
   registerAllEvents();
 }
 
@@ -90,6 +109,13 @@ function startRegistration() {
   // → Google にログインし続けている限り永続的にポップアップなしで動作
   const hasAuthorized = localStorage.getItem('caldrop_authorized') === '1';
   if (hasAuthorized) {
+    // スマホでは prompt:'none' が応答を返さず止まることがある
+    // → 4秒以内に応答がなければ localStorage フラグを削除して通常フローに切り替える
+    silentAuthTimeout = setTimeout(() => {
+      silentAuthTimeout = null;
+      localStorage.removeItem('caldrop_authorized');
+      tokenClient.requestAccessToken();
+    }, 4000);
     tokenClient.requestAccessToken({ prompt: 'none' });
   } else {
     // 初回のみ通常フロー（アカウント選択 + 同意画面あり）
@@ -159,7 +185,8 @@ async function postCalendarEvent(event) {
 function buildCalendarEvent(ev) {
   const base = {
     summary: ev.title,
-    ...(ev.location && { location: ev.location }),
+    ...(ev.location    && { location:    ev.location }),
+    ...(ev.description && { description: ev.description }),
   };
 
   if (ev.allDay) {
@@ -205,3 +232,6 @@ function resetRegisterBtn() {
     btn.disabled = false;
   }
 }
+
+// ページ読み込み時にトークンを復元（有効期限内なら再認証不要）
+initTokenFromStorage();

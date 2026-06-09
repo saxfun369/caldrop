@@ -39,7 +39,8 @@ function makeGCalURL(ev) {
     + '&text='  + encodeURIComponent(ev.title)
     + '&dates=' + dates;
 
-  if (ev.location) url += '&location=' + encodeURIComponent(ev.location);
+  if (ev.location)    url += '&location=' + encodeURIComponent(ev.location);
+  if (ev.description) url += '&details='  + encodeURIComponent(ev.description);
 
   return url;
 }
