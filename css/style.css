@@ -264,7 +264,7 @@ textarea::placeholder { color: var(--text-sub); opacity: 0.6; }
 
 .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 
-.bulk-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.bulk-row { display: flex; gap: 8px; align-items: center; }
 .btn-reset { margin-left: auto; }
 
 .btn-add-event {
@@ -275,7 +275,7 @@ textarea::placeholder { color: var(--text-sub); opacity: 0.6; }
   margin-top: 4px;
 }
 .btn-add-event:hover { background: var(--bg); color: var(--text); }
-.count-label { font-size: 13px; color: var(--text-sub); }
+.count-label { display: block; font-size: 13px; color: var(--text-sub); margin-bottom: 8px; }
 .hint { font-size: 12px; color: var(--text-sub); margin-top: 6px; opacity: 0.7; }
 
 .btn-open-cal {

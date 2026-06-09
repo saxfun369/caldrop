@@ -64,8 +64,6 @@
 
   <div class="btn-row">
     <button class="btn btn-primary" onclick="parseEvents()">解析する</button>
-    <!-- デバッグ用：後で削除 -->
-    <button class="btn" onclick="fillDebugText()" style="color:var(--info-fg);border-color:var(--info-fg)">デバッグ入力</button>
   </div>
 
   <div id="resultMsg" class="result-msg"></div>
@@ -75,11 +73,11 @@
     <div class="divider"></div>
     <div class="bulk-section">
       <div id="registerResult" class="result-msg" style="display:none"></div>
+      <span class="count-label" id="selectedCount"></span>
       <div class="bulk-row">
         <button class="btn btn-primary" id="registerBtn" onclick="startRegistration()">
           Googleカレンダーに登録
         </button>
-        <span class="count-label" id="selectedCount"></span>
         <button class="btn btn-reset" onclick="clearAll()">リセット</button>
       </div>
       <a id="openCalendarBtn" href="https://calendar.google.com/" target="_blank"
@@ -88,7 +86,7 @@
     </div>
   </div>
 
-  <div class="footer">CalDrop — 完全無料・登録不要・データ保存なし<span class="footer-ver">v0.2.1</span></div>
+  <div class="footer">CalDrop — 完全無料・登録不要・データ保存なし<span class="footer-ver">v0.3.0</span></div>
 </div>
 
 <!-- JS 読み込み順：依存関係の順番に並べる -->
