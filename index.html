@@ -73,12 +73,15 @@
   <div id="bulkSection" style="display:none">
     <div class="divider"></div>
     <div class="bulk-section">
+      <div id="registerResult" class="result-msg" style="display:none"></div>
       <div class="bulk-row">
         <button class="btn btn-primary" id="registerBtn" onclick="startRegistration()">
           Googleカレンダーに登録
         </button>
         <span class="count-label" id="selectedCount"></span>
       </div>
+      <a id="openCalendarBtn" href="https://calendar.google.com/" target="_blank"
+         class="btn btn-open-cal" style="display:none">Googleカレンダーを確認する ↗</a>
       <p class="hint">※ 初回のみ Google アカウントの認証が必要です</p>
     </div>
   </div>

@@ -83,6 +83,9 @@ function renderEvents() {
 
   document.getElementById('bulkSection').style.display = 'block';
   resetRegisterBtn();
+  showRegisterResult('', '');
+  const calBtn = document.getElementById('openCalendarBtn');
+  if (calBtn) calBtn.style.display = 'none';
   updateCount();
 }
 

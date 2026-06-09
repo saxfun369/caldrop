@@ -56,7 +56,7 @@ function handleTokenResponse(response) {
       tokenClient.requestAccessToken(); // 通常フローで再試行
       return;
     }
-    showResult('Google認証がキャンセルされました', 'err');
+    showRegisterResult('Google認証がキャンセルされました', 'err');
     resetRegisterBtn();
     return;
   }
@@ -77,36 +77,34 @@ function handleTokenResponse(response) {
 function startRegistration() {
   const checked = getCheckedEvents();
   if (!checked.length) {
-    showResult('登録する予定を選択してください', 'err');
+    showRegisterResult('登録する予定を選択してください', 'err');
     return;
   }
-
-  // GIS ライブラリがまだ読み込まれていなければ待つよう案内
-  if (typeof google === 'undefined') {
-    showResult('認証ライブラリを読み込み中です。少し待ってから再試行してください。', 'err');
-    return;
-  }
-
-  if (!tokenClient) initGoogleAuth();
 
   const btn = document.getElementById('registerBtn');
   btn.disabled = true;
 
-  // 有効なトークンがキャッシュされていれば認証画面をスキップして直接登録へ
-  // Date.now() はミリ秒の現在時刻（Python の time.time() * 1000 に相当）
+  // 有効なトークンがあれば Google ライブラリが未ロードでも直接登録へ進める
   if (accessToken && Date.now() < tokenExpiry) {
     btn.textContent = '登録中...';
     registerAllEvents();
     return;
   }
 
+  // GIS ライブラリがまだ読み込まれていなければ待つよう案内
+  if (typeof google === 'undefined') {
+    showRegisterResult('認証ライブラリを読み込み中です。少し待ってから再試行してください。', 'err');
+    btn.disabled = false;
+    return;
+  }
+
+  if (!tokenClient) initGoogleAuth();
+
   // トークンがない or 期限切れ → 認証が必要
   btn.textContent = '認証中...';
 
   // localStorage に「過去に認証済み」フラグがあればサイレント取得を試みる
   // prompt: 'none' = アカウント選択画面・同意画面を一切表示しない
-  // ブラウザの Google ログインセッションを使ってバックグラウンドでトークン取得
-  // → Google にログインし続けている限り永続的にポップアップなしで動作
   const hasAuthorized = localStorage.getItem('caldrop_authorized') === '1';
   if (hasAuthorized) {
     // スマホでは prompt:'none' が応答を返さず止まることがある
@@ -147,10 +145,12 @@ async function registerAllEvents() {
 
   if (failCount === 0) {
     btn.textContent = `✓ ${doneCount}件を登録しました`;
-    showResult(`${doneCount}件をGoogleカレンダーに登録しました`, 'ok');
+    showRegisterResult(`${doneCount}件をGoogleカレンダーに登録しました`, 'ok');
+    const calBtn = document.getElementById('openCalendarBtn');
+    if (calBtn) calBtn.style.display = 'inline-flex';
   } else {
     btn.textContent = `${doneCount}件登録・${failCount}件失敗`;
-    showResult(`${failCount}件の登録に失敗しました。再試行してください。`, 'err');
+    showRegisterResult(`${failCount}件の登録に失敗しました。再試行してください。`, 'err');
   }
   btn.disabled = false;
 }
@@ -220,6 +220,18 @@ function getCheckedEvents() {
       const chk = document.getElementById('chk-' + i);
       return chk && chk.checked;
     });
+}
+
+/**
+ * ボタン付近の結果メッセージを表示する（登録成功・失敗・認証エラー）
+ */
+function showRegisterResult(msg, type) {
+  const el = document.getElementById('registerResult');
+  if (!el) return;
+  if (!msg) { el.style.display = 'none'; return; }
+  el.className = 'result-msg ' + (type === 'ok' ? 'result-ok' : 'result-err');
+  el.textContent = msg;
+  el.style.display = 'block';
 }
 
 /**
