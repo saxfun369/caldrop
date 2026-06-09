@@ -128,7 +128,8 @@ function parseLine(line, year) {
     rest = rest.replace(trM[0], '').trim();
   } else {
     // 開始時刻のみの検出
-    const stM = rest.match(/\d{1,2}[時:：]\d{2}/);
+    // 「16時」（分なし）も拾えるよう 時 は \d{0,2}、コロンは \d{2} を維持
+    const stM = rest.match(/\d{1,2}時\d{0,2}|\d{1,2}[：:]\d{2}/);
     if (stM) {
       startTime = toHHMM(stM[0]);
       rest = rest.replace(stM[0], '').trim();
