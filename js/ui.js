@@ -30,18 +30,21 @@ function renderCard(i, checked = true) {
   const timeStr = ev.allDay
     ? '終日'
     : (ev.startTime ? ev.startTime + (ev.endTime ? ' – ' + ev.endTime : '') : '時間未定');
-  const locStr  = ev.location    ? '<span>📍 ' + escHtml(ev.location)    + '</span>' : '';
-  const descStr = ev.description ? '<span>📝 ' + escHtml(ev.description) + '</span>' : '';
+  // 絵文字は aria-hidden で隠し、スクリーンリーダーに読み上げさせない
+  const icon = (e) => '<span aria-hidden="true">' + e + '</span> ';
+  const locStr  = ev.location    ? '<span>' + icon('📍') + escHtml(ev.location)    + '</span>' : '';
+  const descStr = ev.description ? '<span>' + icon('📝') + escHtml(ev.description) + '</span>' : '';
 
   card.className = 'event-card';
   card.innerHTML =
     '<input type="checkbox" class="event-check" id="chk-' + i + '" '
+      + 'aria-label="「' + escHtml(ev.title) + '」を登録対象にする" '
       + (checked ? 'checked' : '') + ' onchange="updateCount()">' +
     '<div class="event-info">' +
       '<p class="event-title">' + escHtml(ev.title) + '</p>' +
       '<p class="event-meta">' +
-        '<span>📅 ' + dateStr + '</span>' +
-        '<span>🕐 ' + timeStr + '</span>' +
+        '<span>' + icon('📅') + dateStr + '</span>' +
+        '<span>' + icon('🕐') + timeStr + '</span>' +
         locStr + descStr +
       '</p>' +
     '</div>' +
@@ -145,6 +148,7 @@ function editEvent(i) {
 
   card.innerHTML =
     '<input type="checkbox" class="event-check" id="chk-' + i + '" '
+      + 'aria-label="「' + escHtml(ev.title) + '」を登録対象にする" '
       + (checked ? 'checked' : '') + ' onchange="updateCount()">' +
     '<div class="event-edit-form">' +
       '<div class="edit-row">' +

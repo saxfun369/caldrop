@@ -55,6 +55,8 @@ caldrop/
 - 個別の「＋ 個別追加」リンクで1件ずつ URL 経由登録も可能
 - 解析後のカードをその場で編集（タイトル・日付・時刻・場所・説明）
 - 入力順 / 日付順のソート切り替え
+- Cmd / Ctrl + Enter で解析を実行（PC）
+- 入力ファーストのレイアウト（テキストエリアが最上部・使い方は折りたたみで下部）
 
 ## 対応している入力形式
 ```
@@ -116,8 +118,15 @@ caldrop/
 - 「.」は「ドロップ（Drop）」と「入力の手軽さ（メモの終止符）」を表現
 
 ### フォント
-- UI 全体：システムフォント（`-apple-system`, `Hiragino Sans`, `Yu Gothic`）
+- UI 全体：システムフォント（`-apple-system`, `Hiragino Sans`, `Yu Gothic Medium`, `Meiryo`）
+  - Yu Gothic（Regular）は Windows で極端に細く描画されるため Medium を優先
 - テキストエリア・コードブロック：等幅フォント（`SF Mono`, `Menlo`, `Consolas`）
+
+### アクセシビリティ・スマホ対応
+- キーボード操作時のみ `:focus-visible` でフォーカスリングを表示
+- チェックボックスに `aria-label`、装飾絵文字に `aria-hidden` を付与
+- スマホ（480px以下）：入力欄は16px（iOS の自動ズーム防止）、カードのボタン列は下の行に折り返し
+- 自動フォーカスはホバー可能な端末（PC）のみ（スマホでキーボードが勝手に開くのを防ぐ）
 
 ## Google Calendar API 設定
 - Google Cloud Console でプロジェクト作成済み
@@ -155,11 +164,12 @@ git push
 GitHubにpushするとVercelに自動反映される。
 
 ## 今後の実装予定
+- ライブプレビュー（入力中の自動解析・編集済みカードの保護が設計課題）
 - 解析精度のさらなる向上
 - 繰り返し予定への対応
 - リマインダー設定
-- スマホ表示の最適化
 - OGP画像の設定
+- セキュリティヘッダー（CSP）の設定・トークンの localStorage 保存見直し
 - Google AdSenseの導入
 
 ## 注意事項

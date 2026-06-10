@@ -23,6 +23,8 @@
   --danger-fg: #b82b2b;
   --warn-bg: #fef9ec;
   --warn-fg: #92610a;
+  /* キーボード操作時のフォーカスリング（:focus-visible で使用） */
+  --focus-ring: rgba(55, 53, 47, 0.18);
   --radius: 10px;
   --radius-sm: 6px;
 }
@@ -46,13 +48,16 @@
     --danger-fg: #f5a3a3;
     --warn-bg: #362800;
     --warn-fg: #e8b84b;
+    --focus-ring: rgba(238, 237, 230, 0.25);
   }
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  /* Yu Gothic は Windows で極端に細く描画されるため Medium を優先し Meiryo も併記 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans',
+               'Yu Gothic Medium', 'Yu Gothic', 'Meiryo', sans-serif;
   min-height: 100vh;
 }
 
@@ -81,7 +86,13 @@ textarea {
 textarea:focus { border-color: var(--text); }
 textarea::placeholder { color: var(--text-sub); opacity: 0.6; }
 
-.btn-row { display: flex; gap: 8px; margin: 12px 0 24px; }
+.btn-row { display: flex; gap: 12px; align-items: center; margin: 12px 0 24px; }
+
+/* キーボードショートカットの案内（タッチ端末では非表示） */
+.kbd-hint { font-size: 12px; color: var(--text-sub); opacity: 0.7; }
+@media (hover: none) {
+  .kbd-hint { display: none; }
+}
 .btn {
   font-size: 14px;
   line-height: 1.4;
@@ -98,6 +109,19 @@ textarea::placeholder { color: var(--text-sub); opacity: 0.6; }
 .btn-primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
 .btn-primary:hover { opacity: 0.85; }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* キーボード操作時のみフォーカスリングを表示する
+   （:focus-visible はマウスクリックでは発火しないため見た目を汚さない） */
+.btn:focus-visible, .sort-btn:focus-visible, .edit-btn:focus-visible,
+.add-btn:focus-visible, .event-check:focus-visible, .ex-summary:focus-visible,
+.how-to-summary:focus-visible, .footer a:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+textarea:focus-visible, .edit-input:focus-visible, .edit-input-sm:focus-visible {
+  border-color: var(--text);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
 
 .result-msg { padding: 12px 16px; border-radius: var(--radius-sm); font-size: 14px; margin-bottom: 16px; display: none; }
 .result-ok   { background: var(--success-bg); color: var(--success-fg); }
@@ -307,39 +331,38 @@ textarea::placeholder { color: var(--text-sub); opacity: 0.6; }
   color: var(--text-sub);
   text-align: center;
 }
+.footer a { color: inherit; opacity: 0.7; }
 
+/* 使い方カード（折りたたみ式・入力欄の下に置く） */
 .how-to {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px 20px;
-  margin-bottom: 2rem;
+  padding: 14px 20px;
+  margin-top: 1.5rem;
 }
-.how-to h2 { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
-.how-to ol { font-size: 13px; color: var(--text); padding-left: 18px; line-height: 2; }
-.how-to code { font-family: monospace; background: var(--code-bg); padding: 1px 6px; border-radius: 3px; font-size: 12px; white-space: nowrap; }
-
-/* 書き方の例（折りたたみ） */
-.ex-details { margin-top: 14px; }
-
-.ex-summary {
-  font-size: 12px;
-  color: var(--text-sub);
+.how-to-summary {
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   user-select: none;
-  list-style: none;
+  list-style: none;          /* ブラウザ標準の ▼ マーカーを消して自前の ▶ を使う */
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
-.ex-summary::-webkit-details-marker { display: none; }
-.ex-summary::before {
+.how-to-summary::-webkit-details-marker { display: none; }
+.how-to-summary::before {
   content: '▶';
   font-size: 9px;
+  color: var(--text-sub);
   transition: transform 0.15s;
   display: inline-block;
 }
-details[open] .ex-summary::before { transform: rotate(90deg); }
+details[open] > .how-to-summary::before { transform: rotate(90deg); }
+.how-to-body { margin-top: 12px; }
+.how-to ol { font-size: 13px; color: var(--text); padding-left: 18px; line-height: 2; }
+.how-to code { font-family: monospace; background: var(--code-bg); padding: 1px 6px; border-radius: 3px; font-size: 12px; white-space: nowrap; }
 
 .ex-prose {
   margin-top: 14px;
@@ -371,4 +394,21 @@ details[open] .ex-summary::before { transform: rotate(90deg); }
   padding: 1px 6px;
   border-radius: 3px;
   font-size: 12px;
+}
+
+/* ===== スマホ向け調整 ===== */
+@media (max-width: 480px) {
+  .page { padding: 2rem 1rem 4rem; }
+
+  /* iOS は入力欄のフォントが16px未満だとフォーカス時に画面が自動ズームするため16pxにする */
+  textarea, .edit-input, .edit-input-sm { font-size: 16px; }
+
+  /* カード右側のボタン列を下の行に折り返し、タイトルの幅を確保する */
+  .event-card { flex-wrap: wrap; }
+  .card-actions {
+    flex-direction: row;
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 2px;
+  }
 }

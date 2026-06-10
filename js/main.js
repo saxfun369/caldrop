@@ -47,6 +47,26 @@ function parseEvents() {
   renderEvents();
 }
 
+/**
+ * ページ読み込み完了時の初期化
+ * DOMContentLoaded = HTML の解析が終わったタイミングで発火するイベント
+ */
+document.addEventListener('DOMContentLoaded', () => {
+  const ta = document.getElementById('inputText');
+
+  // Cmd（Mac）/ Ctrl（Windows）+ Enter で解析を実行（キーボードから手を離さず完結できる）
+  ta.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault(); // 改行が入力されるデフォルト動作を止める
+      parseEvents();
+    }
+  });
+
+  // PC（マウス等でホバーできる端末）のみ自動フォーカス。
+  // スマホでフォーカスするとキーボードが勝手に開いてしまうため除外する
+  if (window.matchMedia('(hover: hover)').matches) ta.focus();
+});
+
 function addNewEvent() {
   const today = new Date();
   const dateStr = today.getFullYear() + '-'
