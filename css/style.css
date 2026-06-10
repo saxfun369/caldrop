@@ -403,8 +403,14 @@ details[open] > .how-to-summary::before { transform: rotate(90deg); }
 @media (max-width: 480px) {
   .page { padding: 2rem 1rem 4rem; }
 
+  /* キーボード表示中もライブ解析の結果が見えるよう、上部の余白を詰める */
+  .tagline { margin-bottom: 1.25rem; }
+
   /* iOS は入力欄のフォントが16px未満だとフォーカス時に画面が自動ズームするため16pxにする */
   textarea, .edit-input, .edit-input-sm { font-size: 16px; }
+
+  /* 入力欄は低めから始める。実際の高さは JS（autoGrow）が内容に合わせて伸縮させる */
+  textarea { min-height: 150px; }
 
   /* カード右側のボタン列を下の行に折り返し、タイトルの幅を確保する */
   .event-card { flex-wrap: wrap; }

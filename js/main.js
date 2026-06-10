@@ -139,6 +139,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 600);
   });
 
+  // スマホ：入力欄の高さを内容に合わせて自動で伸縮させる（最大で画面の約4割）
+  // 書き始めは低く保つことで、キーボード表示中もライブ解析されたカードが下に見える
+  const mobileMQ = window.matchMedia('(max-width: 480px)');
+  const autoGrow = () => {
+    if (!mobileMQ.matches) { ta.style.height = ''; return; } // PCでは rows 指定のまま
+    ta.style.height = 'auto'; // 一度リセットしないと行を削除したとき縮まない
+    ta.style.height = Math.min(ta.scrollHeight + 2, window.innerHeight * 0.4) + 'px';
+  };
+  ta.addEventListener('input', autoGrow);
+  autoGrow();
+
   // PC（マウス等でホバーできる端末）のみ自動フォーカス。
   // スマホでフォーカスするとキーボードが勝手に開いてしまうため除外する
   if (window.matchMedia('(hover: hover)').matches) ta.focus();
