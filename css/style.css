@@ -113,7 +113,7 @@ textarea::placeholder { color: var(--text-sub); opacity: 0.6; }
 /* キーボード操作時のみフォーカスリングを表示する
    （:focus-visible はマウスクリックでは発火しないため見た目を汚さない） */
 .btn:focus-visible, .sort-btn:focus-visible, .edit-btn:focus-visible,
-.add-btn:focus-visible, .event-check:focus-visible, .ex-summary:focus-visible,
+.add-btn:focus-visible, .event-check:focus-visible,
 .how-to-summary:focus-visible, .footer a:focus-visible {
   outline: 2px solid var(--text);
   outline-offset: 2px;

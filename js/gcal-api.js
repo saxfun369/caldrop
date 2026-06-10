@@ -131,16 +131,23 @@ async function registerAllEvents() {
   let doneCount = 0;
   let failCount = 0;
 
-  for (let k = 0; k < checked.length; k++) {
-    btn.textContent = `登録中... ${k + 1} / ${checked.length} 件`;
-    try {
-      await postCalendarEvent(buildCalendarEvent(checked[k].ev));
-      markDone(checked[k].i);
-      doneCount++;
-    } catch (e) {
-      failCount++;
-      console.error('登録失敗:', checked[k].ev.title, e.message);
+  // 登録中はライブプレビューの自動再解析を止める（途中で画面が作り直されるのを防ぐ）
+  isRegistering = true;
+  try {
+    for (let k = 0; k < checked.length; k++) {
+      btn.textContent = `登録中... ${k + 1} / ${checked.length} 件`;
+      try {
+        await postCalendarEvent(buildCalendarEvent(checked[k].ev));
+        markDone(checked[k].i);
+        doneCount++;
+      } catch (e) {
+        failCount++;
+        console.error('登録失敗:', checked[k].ev.title, e.message);
+      }
     }
+  } finally {
+    // try 内で何が起きても必ず実行される（Python の try/finally と同じ）
+    isRegistering = false;
   }
 
   if (failCount === 0) {
@@ -214,14 +221,12 @@ function buildCalendarEvent(ev) {
 
 /**
  * チェックされている予定を { ev, i } の配列で返す
+ * チェック状態は DOM ではなくデータ側（parsedEvents.checked）から読む
  */
 function getCheckedEvents() {
   return parsedEvents
     .map((ev, i) => ({ ev, i }))
-    .filter(({ i }) => {
-      const chk = document.getElementById('chk-' + i);
-      return chk && chk.checked;
-    });
+    .filter(({ ev }) => ev.checked);
 }
 
 /**

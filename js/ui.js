@@ -1,6 +1,8 @@
 /**
  * UI モジュール
  * 画面の描画・更新・操作を担当する。
+ * チェック・編集・登録済みなどの状態は parsedEvents（データ側）に持ち、
+ * DOM は常に parsedEvents から描き直す（「データが正・画面は写し」の方針）。
  */
 
 /**
@@ -18,10 +20,8 @@ function escHtml(str) {
 
 /**
  * 1枚のカードを「表示モード」で描画する
- * i        : parsedEvents のインデックス
- * checked  : チェックボックスの状態（編集前の状態を引き継ぐ）
  */
-function renderCard(i, checked = true) {
+function renderCard(i) {
   const card = document.getElementById('card-' + i);
   if (!card) return;
   const ev = parsedEvents[i];
@@ -39,7 +39,7 @@ function renderCard(i, checked = true) {
   card.innerHTML =
     '<input type="checkbox" class="event-check" id="chk-' + i + '" '
       + 'aria-label="「' + escHtml(ev.title) + '」を登録対象にする" '
-      + (checked ? 'checked' : '') + ' onchange="updateCount()">' +
+      + (ev.checked ? 'checked' : '') + ' onchange="toggleCheck(' + i + ')">' +
     '<div class="event-info">' +
       '<p class="event-title">' + escHtml(ev.title) + '</p>' +
       '<p class="event-meta">' +
@@ -50,24 +50,34 @@ function renderCard(i, checked = true) {
     '</div>' +
     '<div class="card-actions">' +
       '<button class="edit-btn" onclick="editEvent(' + i + ')">編集</button>' +
-      '<a href="' + makeGCalURL(ev) + '" target="_blank" class="add-btn"'
-        + ' id="addbtn-' + i + '" onclick="markDone(' + i + ')">＋ 個別追加</a>' +
+      '<a href="' + makeGCalURL(ev) + '" target="_blank"'
+        + ' class="add-btn' + (ev.registered ? ' done' : '') + '"'
+        + ' id="addbtn-' + i + '" onclick="markDone(' + i + ')">'
+        + (ev.registered ? '✓ 追加済み' : '＋ 個別追加') + '</a>' +
     '</div>';
 }
 
 /**
  * 解析済み予定の一覧カードを画面に描画する
+ * 表示順（displayOrder）もここで sortByDate に応じて計算し直す
  */
 function renderEvents() {
   const list = document.getElementById('eventsList');
+
+  displayOrder = parsedEvents.map((_, i) => i);
+  if (sortByDate) {
+    displayOrder.sort((a, b) =>
+      (parsedEvents[a].date || '').localeCompare(parsedEvents[b].date || '')
+    );
+  }
 
   // ヘッダー（件数ラベル + ソートトグル）
   list.innerHTML =
     '<div class="events-header">' +
       '<p class="section-label">' + parsedEvents.length + '件を解析しました — 確認してから登録してください</p>' +
       '<div class="sort-toggle">' +
-        '<button class="sort-btn sort-active" id="sortBtnInput" onclick="setSortOrder(false)">入力順</button>' +
-        '<button class="sort-btn" id="sortBtnDate"  onclick="setSortOrder(true)">日付順</button>' +
+        '<button class="sort-btn' + (!sortByDate ? ' sort-active' : '') + '" onclick="setSortOrder(false)">入力順</button>' +
+        '<button class="sort-btn' + (sortByDate  ? ' sort-active' : '') + '" onclick="setSortOrder(true)">日付順</button>' +
       '</div>' +
     '</div>';
 
@@ -82,7 +92,7 @@ function renderEvents() {
   });
 
   list.appendChild(cards);
-  displayOrder.forEach(i => renderCard(i, true));
+  displayOrder.forEach(i => renderCard(i));
 
   const addBtn = document.createElement('button');
   addBtn.className = 'btn btn-add-event';
@@ -99,38 +109,20 @@ function renderEvents() {
 }
 
 /**
- * ソート順を切り替えてカード一覧を再描画する
- * sortByDate: true = 日付順 / false = 入力順
+ * ソート順を切り替えて再描画する
+ * 状態は sortByDate（main.js）に持つので、ここでは切り替えて描き直すだけ
  */
-function setSortOrder(sortByDate) {
-  // 現在のチェック状態を保存（ソート前のインデックスで保持）
-  const checkedState = parsedEvents.map((_, i) => {
-    const chk = document.getElementById('chk-' + i);
-    return chk ? chk.checked : true;
-  });
+function setSortOrder(byDate) {
+  sortByDate = byDate;
+  renderEvents();
+}
 
-  // displayOrder を更新
-  displayOrder = parsedEvents.map((_, i) => i);
-  if (sortByDate) {
-    displayOrder.sort((a, b) =>
-      (parsedEvents[a].date || '').localeCompare(parsedEvents[b].date || '')
-    );
-  }
-
-  // ボタンのアクティブ状態を切り替え
-  document.getElementById('sortBtnInput').classList.toggle('sort-active', !sortByDate);
-  document.getElementById('sortBtnDate').classList.toggle('sort-active',  sortByDate);
-
-  // カードリストだけ再構築（ヘッダーはそのまま）
-  const cardsList = document.getElementById('cardsList');
-  if (!cardsList) return;
-  cardsList.innerHTML = '';
-  displayOrder.forEach(i => {
-    const card = document.createElement('div');
-    card.id = 'card-' + i;
-    cardsList.appendChild(card);
-  });
-  displayOrder.forEach(i => renderCard(i, checkedState[i]));
+/**
+ * チェックボックスの状態をデータ側（parsedEvents）に反映する
+ */
+function toggleCheck(i) {
+  const chk = document.getElementById('chk-' + i);
+  if (chk) parsedEvents[i].checked = chk.checked;
   updateCount();
 }
 
@@ -138,7 +130,6 @@ function setSortOrder(sortByDate) {
  * カードを「編集モード」に切り替える
  */
 function editEvent(i) {
-  const checked = document.getElementById('chk-' + i).checked;
   const ev = parsedEvents[i];
   const card = document.getElementById('card-' + i);
   card.className = 'event-card editing';
@@ -149,7 +140,7 @@ function editEvent(i) {
   card.innerHTML =
     '<input type="checkbox" class="event-check" id="chk-' + i + '" '
       + 'aria-label="「' + escHtml(ev.title) + '」を登録対象にする" '
-      + (checked ? 'checked' : '') + ' onchange="updateCount()">' +
+      + (ev.checked ? 'checked' : '') + ' onchange="toggleCheck(' + i + ')">' +
     '<div class="event-edit-form">' +
       '<div class="edit-row">' +
         '<label class="edit-label">タイトル</label>' +
@@ -207,13 +198,13 @@ function toggleAlldayEdit(i) {
  * 編集内容を parsedEvents に保存してカードを再描画する
  */
 function saveEvent(i) {
-  const checked   = document.getElementById('chk-' + i).checked;
   const allDay    = document.getElementById('ead-' + i).checked;
   const startTime = document.getElementById('est-' + i).value || null;
   const endTime   = document.getElementById('eet-' + i).value || null;
   const endDate   = document.getElementById('eed-' + i).value || null;
 
   parsedEvents[i] = {
+    ...parsedEvents[i],  // sourceLine・checked などの管理フィールドは引き継ぐ
     title:       document.getElementById('et-' + i).value.trim() || '予定',
     date:        document.getElementById('ed-' + i).value,
     endDate:     endDate,
@@ -222,9 +213,11 @@ function saveEvent(i) {
     location:    document.getElementById('eloc-' + i).value.trim() || null,
     description: document.getElementById('edesc-' + i).value.trim() || null,
     allDay:      allDay || !startTime,
+    edited:      true,
+    registered:  false,  // 内容が変わったので「追加済み」表示は解除する
   };
 
-  renderCard(i, checked);
+  renderCard(i);
   updateCount();
 }
 
@@ -232,14 +225,15 @@ function saveEvent(i) {
  * 編集をキャンセルして元の表示に戻す
  */
 function cancelEdit(i) {
-  const checked = document.getElementById('chk-' + i).checked;
-  renderCard(i, checked);
+  renderCard(i);
 }
 
 /**
- * カードの「追加済み」表示に切り替える
+ * 「追加済み」をデータに記録し、カードの表示を切り替える
  */
 function markDone(i) {
+  parsedEvents[i].registered = true;
+  // リンクを開く動作を妨げないよう、表示の切り替えは少し遅らせる
   setTimeout(() => {
     const b = document.getElementById('addbtn-' + i);
     if (b) { b.textContent = '✓ 追加済み'; b.classList.add('done'); }
@@ -250,7 +244,7 @@ function markDone(i) {
  * チェックされている件数を更新する
  */
 function updateCount() {
-  const checked = document.querySelectorAll('.event-check:checked').length;
+  const checked = parsedEvents.filter(ev => ev.checked).length;
   document.getElementById('selectedCount').textContent =
     checked + ' / ' + parsedEvents.length + ' 件選択中';
 }
@@ -272,8 +266,5 @@ function showResult(msg, type, html) {
  */
 function clearAll() {
   document.getElementById('inputText').value = '';
-  document.getElementById('eventsList').innerHTML = '';
-  document.getElementById('bulkSection').style.display = 'none';
-  showResult('', '');
-  parsedEvents = [];
+  clearResults();
 }
