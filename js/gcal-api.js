@@ -199,13 +199,15 @@ function buildCalendarEvent(ev) {
     return { ...base, start: { date: ev.date }, end: { date: endDate } };
   } else {
     // 時刻あり：dateTime 形式。タイムゾーンは Asia/Tokyo を明示する
-    const st = ev.startTime || '09:00';
-    const h  = parseInt(st.split(':')[0]);
-    const et = ev.endTime || (h + 1).toString().padStart(2, '0') + ':' + st.split(':')[1];
+    const st  = ev.startTime || '09:00';
+    // 終了未指定→開始の1時間後（23時台は翌日へ繰り上げ）。gcal.js の defaultEnd を共用
+    const end = ev.endTime
+      ? { date: ev.date, time: ev.endTime }
+      : defaultEnd(ev.date, st);
     return {
       ...base,
       start: { dateTime: ev.date + 'T' + st + ':00', timeZone: 'Asia/Tokyo' },
-      end:   { dateTime: ev.date + 'T' + et + ':00', timeZone: 'Asia/Tokyo' },
+      end:   { dateTime: end.date + 'T' + end.time + ':00', timeZone: 'Asia/Tokyo' },
     };
   }
 }

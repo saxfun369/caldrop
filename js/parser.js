@@ -10,13 +10,21 @@
 function toHHMM(str) {
   if (!str) return null;
   str = str.replace(/：/g, ':').trim();
+  let h = null, mi = null;
   // 「10時30分」「10:30」など 時 or : を含む形式
   const m = str.match(/(\d{1,2})[時:](\d{0,2})/);
-  if (m) return m[1].padStart(2, '0') + ':' + (m[2] || '00').padStart(2, '0');
-  // 「12」「9」など数字のみ（「12から15時」の「12」に対応）
-  const n = str.match(/^(\d{1,2})$/);
-  if (n) return n[1].padStart(2, '0') + ':00';
-  return null;
+  if (m) {
+    h  = parseInt(m[1], 10);
+    mi = parseInt(m[2] || '0', 10);
+  } else {
+    // 「12」「9」など数字のみ（「12から15時」の「12」に対応）
+    const n = str.match(/^(\d{1,2})$/);
+    if (n) { h = parseInt(n[1], 10); mi = 0; }
+  }
+  if (h === null) return null;
+  // 「25時」「10:75」など実在しない時刻は弾く
+  if (h > 23 || mi > 59) return null;
+  return String(h).padStart(2, '0') + ':' + String(mi).padStart(2, '0');
 }
 
 /**
@@ -37,14 +45,23 @@ function adjustYear(dateStr, year) {
 }
 
 /**
+ * 年・月・日の文字列から "YYYY-MM-DD" を組み立てる
+ * 13月・45日など実在しない値は null を返す（その行は解析失敗として扱う）
+ */
+function buildDate(year, month, day) {
+  const mo = parseInt(month, 10);
+  const d  = parseInt(day, 10);
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  return year + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+}
+
+/**
  * "4/20" "4月20日" などの文字列を "2026-04-20" 形式に変換する
  */
 function parseDate(str, year) {
   str = str.trim();
-  let m = str.match(/(\d{1,2})[\/\-](\d{1,2})/);
-  if (m) return year + '-' + m[1].padStart(2, '0') + '-' + m[2].padStart(2, '0');
-  m = str.match(/(\d{1,2})月(\d{1,2})日?/);
-  if (m) return year + '-' + m[1].padStart(2, '0') + '-' + m[2].padStart(2, '0');
+  const m = str.match(/(\d{1,2})[\/\-](\d{1,2})/) || str.match(/(\d{1,2})月(\d{1,2})日?/);
+  if (m) return buildDate(year, m[1], m[2]);
   return null;
 }
 
@@ -72,14 +89,17 @@ function parseLine(line, year) {
     '一昨昨日': -3, 'さきおととい': -3,
     '一昨日': -2, 'おととい': -2, 'いっさくじつ': -2,
   };
-  const relM = rest.match(/^(一昨昨日|さきおととい|一昨日|おととい|いっさくじつ|昨日|きのう|さくじつ|明々後日|しあさって|明後日|みょうごにち|あさって|明日|みょうにち|あした|あす|本日|ほんじつ|今日|きょう)/);
+  // 行頭または空白の直後でのみマッチさせる（絶対日付と同様に行の途中でも認識する）
+  // 「明日(?!香)」は否定先読み：「明日香村」の「明日」を相対日付と誤認しないためのガード
+  const relM = rest.match(/(^|[\s　])(一昨昨日|さきおととい|一昨日|おととい|いっさくじつ|昨日|きのう|さくじつ|明々後日|しあさって|明後日|みょうごにち|あさって|明日(?!香)|みょうにち|あした|あす|本日|ほんじつ|今日|きょう)/);
   if (relM) {
     const d = new Date();
-    d.setDate(d.getDate() + relMap[relM[1]]);
+    d.setDate(d.getDate() + relMap[relM[2]]);
     date = d.getFullYear() + '-'
       + String(d.getMonth() + 1).padStart(2, '0') + '-'
       + String(d.getDate()).padStart(2, '0');
-    rest = rest.replace(relM[0], '').trim();
+    // relM[1]（直前の空白 or 空文字）は残して相対日付の単語だけ取り除く
+    rest = rest.replace(relM[0], relM[1]).trim();
   }
 
   if (!date) {
@@ -88,20 +108,19 @@ function parseLine(line, year) {
     const yearKanjiM = rest.match(/(\d{4})年(\d{1,2})月(\d{1,2})日?/);
 
     if (yearSlashM) {
-      date = yearSlashM[1] + '-' + yearSlashM[2].padStart(2, '0') + '-' + yearSlashM[3].padStart(2, '0');
+      date = buildDate(yearSlashM[1], yearSlashM[2], yearSlashM[3]);
       rest = rest.replace(yearSlashM[0], '').trim();
       hasExplicitYear = true;
     } else if (yearKanjiM) {
-      date = yearKanjiM[1] + '-' + yearKanjiM[2].padStart(2, '0') + '-' + yearKanjiM[3].padStart(2, '0');
+      date = buildDate(yearKanjiM[1], yearKanjiM[2], yearKanjiM[3]);
       rest = rest.replace(yearKanjiM[0], '').trim();
       hasExplicitYear = true;
     } else {
       // 日付範囲（例: 4/25-27）の検出
       const rangeDateM = rest.match(/(\d{1,2})[\/\-](\d{1,2})\s*[\-〜~～]\s*(\d{1,2})/);
       if (rangeDateM) {
-        const mo = rangeDateM[1].padStart(2, '0');
-        date    = year + '-' + mo + '-' + rangeDateM[2].padStart(2, '0');
-        endDate = year + '-' + mo + '-' + rangeDateM[3].padStart(2, '0');
+        date    = buildDate(year, rangeDateM[1], rangeDateM[2]);
+        endDate = buildDate(year, rangeDateM[1], rangeDateM[3]);
         rest = rest.replace(rangeDateM[0], '').trim();
         allDay = true;
       } else {
@@ -119,13 +138,26 @@ function parseLine(line, year) {
   }
   if (!date) return null;
 
-  // 時刻範囲（例: 10:00-15:00 / 15時〜17時 / 12から15時 / 10時 15時）の検出
+  // 時刻範囲（例: 10:00-15:00 / 15時〜17時 / 12から15時 / 17 21）の検出
   // 区切り: ハイフン系・波ダッシュ系・から・空白（半角・全角）
-  const trM = rest.match(/(\d{1,2}(?:[時:：]\d{0,2})?)\s*(?:[-〜~～ー]|から|[ 　])\s*(\d{1,2}(?:[時:：]\d{0,2})?)/);
+  // ① 開始側に「時」かコロンを含む形式。「夕食18時〜20時」のように
+  //    単語に続けて書かれても拾えるよう、直前の文字は問わない
+  let trM = rest.match(/(\d{1,2}[時:：]\d{0,2})\s*(?:[-〜~～ー]|から|[ 　])\s*(\d{1,2}(?:[時:：]\d{0,2})?)/);
+  let trPrefix = '';
+  if (!trM) {
+    // ② 開始側が数字のみの形式（例: 17 21 / 12から15時）
+    //    「会議室5 13時」の 5 を時刻と誤解釈しないよう、直前が行頭か空白の場合だけ許可する
+    const bareM = rest.match(/(^|[\s　])(\d{1,2})\s*(?:[-〜~～ー]|から|[ 　])\s*(\d{1,2}(?:[時:：]\d{0,2})?)/);
+    if (bareM) {
+      // ①と同じ形（[全体, 開始, 終了]）に組み替える。先頭の空白は replace 時に残す
+      trM = [bareM[0], bareM[2], bareM[3]];
+      trPrefix = bareM[1];
+    }
+  }
   if (trM) {
     startTime = toHHMM(trM[1]);
     endTime   = toHHMM(trM[2]);
-    rest = rest.replace(trM[0], '').trim();
+    rest = rest.replace(trM[0], trPrefix).trim();
   } else {
     // 開始時刻のみの検出
     // 「16時」（分なし）も拾えるよう 時 は \d{0,2}、コロンは \d{2} を維持
@@ -168,9 +200,11 @@ function parseLine(line, year) {
   // 都市キーワードによる場所検出（@指定がない場合のフォールバック）
   if (!location) {
     const locKW = ['東京', '大阪', '京都', '名古屋', '福岡', '札幌', '横浜', '神戸', '沖縄', '仙台'];
-    const parts = rest.split(/[\s　]+/);
+    const parts = rest.split(/[\s　]+/).filter(p => p);
     const li = parts.findIndex(p => locKW.some(k => p.includes(k)));
-    if (li >= 0) location = parts.splice(li, 1)[0];
+    // 場所として抜き出すのは、タイトルになる単語が他に残る場合だけ。
+    // 「東京出張」1語だけの行では「出張」がタイトルの一部なので場所扱いしない
+    if (li >= 0 && parts.length >= 2) location = parts.splice(li, 1)[0];
     rest = parts.join(' ');
   }
 
@@ -183,4 +217,11 @@ function parseLine(line, year) {
   }
 
   return { title, date, endDate, startTime, endTime, location, description, allDay };
+}
+
+// Node.js のテスト（node --test）から require できるようにする。
+// ブラウザには module が存在しないため、この if はブラウザでは実行されない。
+// Python でいう if __name__ == "__main__": と似た「実行環境による分岐」
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { toHHMM, adjustYear, buildDate, parseDate, parseLine };
 }
