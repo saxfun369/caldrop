@@ -83,7 +83,15 @@
     </div>
   </details>
 
-  <div class="footer">CalDrop — 完全無料・登録不要・データ保存なし &nbsp;·&nbsp; <a href="/privacy.html">プライバシーポリシー</a><span class="footer-ver">v0.8.2</span></div>
+  <div class="footer">CalDrop — 完全無料・登録不要・データ保存なし<br><a href="/privacy.html">プライバシーポリシー</a></div>
+</div>
+
+<!-- ロゴ5連打で出現するバージョンオーバーレイ -->
+<div id="versionOverlay" class="version-overlay" style="display:none" onclick="closeVersionOverlay()">
+  <div class="version-overlay-content">
+    <div class="version-overlay-logo">CalDrop<span>.</span></div>
+    <div class="version-overlay-num" id="overlayVerNum"></div>
+  </div>
 </div>
 
 <!-- JS 読み込み順：依存関係の順番に並べる -->

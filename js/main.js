@@ -4,6 +4,8 @@
  * Python の if __name__ == "__main__": ブロックに相当。
  */
 
+const APP_VERSION = 'v0.8.4';
+
 // アプリ全体で共有する予定データ（Python のグローバル変数に相当）
 // 解析結果のフィールドに加えて、以下の管理用フィールドを持つ：
 //   sourceLine : 由来するテキスト行（「＋ 予定を追加」による手動追加は null）
@@ -33,6 +35,7 @@ function parseEvents(auto = false) {
     else showResult('予定を入力してください。', 'err');
     return;
   }
+
 
   const year = new Date().getFullYear().toString();
   const lines = text.split(/\n/);
@@ -153,7 +156,30 @@ document.addEventListener('DOMContentLoaded', () => {
   // PC（マウス等でホバーできる端末）のみ自動フォーカス。
   // スマホでフォーカスするとキーボードが勝手に開いてしまうため除外する
   if (window.matchMedia('(hover: hover)').matches) ta.focus();
+
+  // 隠しコマンド：ロゴを5回連打するとバージョンを表示
+  let logoTapCount = 0;
+  let logoTapTimer = null;
+  document.querySelector('.logo').addEventListener('click', () => {
+    logoTapCount++;
+    clearTimeout(logoTapTimer);
+    logoTapTimer = setTimeout(() => { logoTapCount = 0; }, 1500);
+    if (logoTapCount >= 5) {
+      logoTapCount = 0;
+      showVersion();
+    }
+  });
 });
+
+function showVersion() {
+  document.getElementById('overlayVerNum').textContent = APP_VERSION;
+  const overlay = document.getElementById('versionOverlay');
+  overlay.style.display = 'flex';
+}
+
+function closeVersionOverlay() {
+  document.getElementById('versionOverlay').style.display = 'none';
+}
 
 function addNewEvent() {
   const today = new Date();
