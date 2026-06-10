@@ -289,6 +289,7 @@ textarea:focus-visible, .edit-input:focus-visible, .edit-input-sm:focus-visible 
 .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 
 .bulk-row { display: flex; gap: 8px; align-items: center; }
+.btn-auth-retry { margin-bottom: 12px; }
 .btn-reset { margin-left: auto; }
 
 .btn-add-event {

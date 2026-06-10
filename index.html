@@ -40,6 +40,9 @@
     <div class="divider"></div>
     <div class="bulk-section">
       <div id="registerResult" class="result-msg" style="display:none"></div>
+      <!-- ポップアップブロック検出時のみ表示。クリック直下で認証を開き直す -->
+      <button class="btn btn-primary btn-auth-retry" id="authRetryBtn"
+              style="display:none" onclick="retryAuth()">Google認証を開く</button>
       <span class="count-label" id="selectedCount"></span>
       <div class="bulk-row">
         <button class="btn btn-primary" id="registerBtn" onclick="startRegistration()">
@@ -87,7 +90,7 @@
     </div>
   </details>
 
-  <div class="footer">CalDrop — 完全無料・登録不要・データ保存なし &nbsp;·&nbsp; <a href="/privacy.html">プライバシーポリシー</a><span class="footer-ver">v0.5.1</span></div>
+  <div class="footer">CalDrop — 完全無料・登録不要・データ保存なし &nbsp;·&nbsp; <a href="/privacy.html">プライバシーポリシー</a><span class="footer-ver">v0.5.2</span></div>
 </div>
 
 <!-- JS 読み込み順：依存関係の順番に並べる -->

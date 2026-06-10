@@ -36,7 +36,59 @@ function initGoogleAuth() {
     // calendar.events スコープ：予定の読み書き権限
     scope: 'https://www.googleapis.com/auth/calendar.events',
     callback: handleTokenResponse,
+    // OAuth 以外のエラー（ポップアップが開けない・ユーザーが閉じた等）はこちらに来る
+    error_callback: handleAuthError,
   });
+}
+
+/**
+ * ポップアップ関連のエラー処理
+ * ブラウザは「クリック直後の短い時間」しかポップアップを許可しないため、
+ * 自動再試行のタイミング次第でブロックされることがある。
+ * ブロックを検出したら、ユーザーのクリック直下で再試行できるボタンを表示する。
+ */
+function handleAuthError(err) {
+  if (silentAuthTimeout) { clearTimeout(silentAuthTimeout); silentAuthTimeout = null; }
+
+  if (err && err.type === 'popup_failed_to_open') {
+    showAuthRetry('認証ポップアップがブロックされました。下のボタンからもう一度開いてください。');
+    return;
+  }
+  // popup_closed など：ユーザーが認証ウィンドウを閉じた
+  showRegisterResult('Google認証がキャンセルされました', 'err');
+  resetRegisterBtn();
+}
+
+/**
+ * 「Google認証を開く」ボタン付きのエラーメッセージを表示する
+ */
+function showAuthRetry(msg) {
+  resetRegisterBtn();
+  showRegisterResult(msg, 'err');
+  const b = document.getElementById('authRetryBtn');
+  if (b) b.style.display = '';
+}
+
+/**
+ * 再試行ボタンを隠す
+ */
+function hideAuthRetry() {
+  const b = document.getElementById('authRetryBtn');
+  if (b) b.style.display = 'none';
+}
+
+/**
+ * 「Google認証を開く」ボタンから呼ばれる
+ * ユーザーのクリック直下で requestAccessToken を呼ぶので、
+ * ポップアップブロックの対象にならない
+ */
+function retryAuth() {
+  hideAuthRetry();
+  showRegisterResult('', '');
+  const btn = document.getElementById('registerBtn');
+  btn.disabled = true;
+  btn.textContent = '認証中...';
+  tokenClient.requestAccessToken();
 }
 
 /**
@@ -53,13 +105,16 @@ function handleTokenResponse(response) {
      || response.error === 'login_required'
      || response.error === 'account_selection_required') {
       localStorage.removeItem('caldrop_authorized');
-      tokenClient.requestAccessToken(); // 通常フローで再試行
+      // 通常フローで再試行。クリックから時間が経っていてブロックされた場合は
+      // error_callback（popup_failed_to_open）が拾って再試行ボタンを表示する
+      tokenClient.requestAccessToken();
       return;
     }
     showRegisterResult('Google認証がキャンセルされました', 'err');
     resetRegisterBtn();
     return;
   }
+  hideAuthRetry(); // 認証に成功したので再試行ボタンは不要
   accessToken = response.access_token;
   // expires_in は秒数（通常 3600 = 1時間）。60秒前に期限切れ扱いにしてバッファを持たせる
   tokenExpiry = Date.now() + (response.expires_in - 60) * 1000;
@@ -83,6 +138,7 @@ function startRegistration() {
 
   const btn = document.getElementById('registerBtn');
   btn.disabled = true;
+  hideAuthRetry(); // 再試行ボタンが出たまま登録ボタンを押し直した場合に備えて隠す
 
   // 有効なトークンがあれば Google ライブラリが未ロードでも直接登録へ進める
   if (accessToken && Date.now() < tokenExpiry) {
@@ -109,6 +165,8 @@ function startRegistration() {
   if (hasAuthorized) {
     // スマホでは prompt:'none' が応答を返さず止まることがある
     // → 4秒以内に応答がなければ localStorage フラグを削除して通常フローに切り替える
+    //   （クリックから4秒後はポップアップがブロックされやすいが、
+    //     その場合は error_callback が検出して再試行ボタンを表示する）
     silentAuthTimeout = setTimeout(() => {
       silentAuthTimeout = null;
       localStorage.removeItem('caldrop_authorized');
@@ -250,6 +308,7 @@ function resetRegisterBtn() {
     btn.textContent = 'Googleカレンダーに登録';
     btn.disabled = false;
   }
+  hideAuthRetry();
 }
 
 // ページ読み込み時にトークンを復元（有効期限内なら再認証不要）
