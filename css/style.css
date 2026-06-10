@@ -126,6 +126,7 @@ textarea:focus-visible, .edit-input:focus-visible, .edit-input-sm:focus-visible 
 }
 
 .result-msg { padding: 12px 16px; border-radius: var(--radius-sm); font-size: 14px; margin-bottom: 16px; display: none; }
+.warn-reason { opacity: 0.75; font-size: 12px; }
 .result-ok   { background: var(--success-bg); color: var(--success-fg); }
 .result-err  { background: var(--danger-bg);  color: var(--danger-fg); }
 .result-warn { background: var(--warn-bg);    color: var(--warn-fg); }

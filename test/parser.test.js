@@ -10,7 +10,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { toHHMM, adjustYear, parseDate, parseLine } = require('../js/parser.js');
+const { toHHMM, adjustYear, parseDate, parseLine, parseLineDetailed, normalizeKana } = require('../js/parser.js');
 const { defaultEnd } = require('../js/gcal.js');
 
 /** Date オブジェクトを "YYYY-MM-DD" に整形する（テスト内の期待値計算用） */
@@ -137,6 +137,35 @@ test('parseLine: 30時以降と朝6時以降への逆転は誤記としてエラ
 test('parseLine: 暦に存在しない日付は解析失敗', () => {
   assert.equal(parseLine('2/30 ありえない', YEAR), null);
   assert.equal(parseLine('4/31 ありえない', YEAR), null);
+});
+
+// ---------------- ひらがな・全角数字 ----------------
+
+test('normalizeKana: 数字に続くひらがな単位だけ変換する', () => {
+  assert.equal(normalizeKana('4がつ7にち 15じはん'), '4月7日 15時半');
+  assert.equal(normalizeKana('１５じ３０ぷん'), '15時30分');
+  // タイトル中の通常のひらがなは変換しない
+  assert.equal(normalizeKana('まじめな会議 ひにち未定'), 'まじめな会議 ひにち未定');
+});
+
+test('parseLine: ひらがな・全角数字の日付・時刻を認識する', () => {
+  const a = parseLine('4がつ7にち 15じはん 美容院', YEAR);
+  assert.equal(a.date, '2099-04-07');
+  assert.equal(a.startTime, '15:30');
+  assert.equal(a.title, '美容院');
+  const b = parseLine('４月７日　１５時　美容院', YEAR);
+  assert.equal(b.date, '2099-04-07');
+  assert.equal(b.startTime, '15:00');
+});
+
+// ---------------- エラー理由（parseLineDetailed） ----------------
+
+test('parseLineDetailed: 失敗理由を具体的に返す', () => {
+  assert.equal(parseLineDetailed('4/31 テスト', YEAR).error, '「4月31日」は存在しません');
+  assert.equal(parseLineDetailed('13/4 テスト', YEAR).error, '「13月」は存在しません');
+  assert.match(parseLineDetailed('8/1 30時 イベント', YEAR).error, /30時.*29時まで/);
+  assert.match(parseLineDetailed('8/1 17時から15時 水泳', YEAR).error, /終了時刻（15:00）が開始時刻（17:00）より前/);
+  assert.match(parseLineDetailed('タイトルだけの行', YEAR).error, /日付が見つかりません/);
 });
 
 test('parseLine: 全角＠でも場所を認識する', () => {

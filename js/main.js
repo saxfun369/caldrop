@@ -58,12 +58,12 @@ function parseEvents(auto = false) {
       lineEvents.push(queue.shift());
       return;
     }
-    const ev = parseLine(line, year);
-    if (ev) {
-      // スプレッド構文 {...ev, x: 1} は Python の {**d, "x": 1} に相当
-      lineEvents.push({ ...ev, sourceLine: line, checked: true, edited: false, registered: false });
+    const r = parseLineDetailed(line, year);
+    if (r.event) {
+      // スプレッド構文 {...obj, x: 1} は Python の {**d, "x": 1} に相当
+      lineEvents.push({ ...r.event, sourceLine: line, checked: true, edited: false, registered: false });
     } else {
-      failed.push({ line, idx });
+      failed.push({ line, idx, reason: r.error });
     }
   });
 
@@ -83,7 +83,10 @@ function parseEvents(auto = false) {
     warns = failed.filter(f => f.idx !== cursorLine);
   }
   if (warns.length > 0) {
-    const items = warns.map(f => `<li>${escHtml(f.line)}</li>`).join('');
+    // 各行に「なぜ認識できなかったか」の理由を添えて表示する
+    const items = warns.map(f =>
+      `<li>${escHtml(f.line)}<span class="warn-reason"> — ${escHtml(f.reason || '認識できませんでした')}</span></li>`
+    ).join('');
     showResult(
       `${warns.length}行を認識できませんでした。認識できた予定のみ表示しています。`
       + `<ul style="margin-top:6px;padding-left:1.4em;opacity:0.85">${items}</ul>`,

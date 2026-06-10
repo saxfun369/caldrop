@@ -34,6 +34,34 @@ function toHHMM(str) {
 }
 
 /**
+ * ひらがな・全角数字の表記ゆれを正規化する（4がつ7にち → 4月7日）
+ * 「数字の直後」のひらがな単位だけ変換するので、
+ * タイトル中の通常のひらがな（「まじで」の「じ」など）には影響しない
+ */
+function normalizeKana(str) {
+  // 全角数字 → 半角（４ → 4）。文字コードのオフセット分（0xFEE0）をずらすだけで変換できる
+  str = str.replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+  return str
+    .replace(/(\d)ねん/g, '$1年')
+    .replace(/(\d)がつ/g, '$1月')
+    .replace(/(\d)にち/g, '$1日')
+    .replace(/(\d)じはん/g, '$1時半') // 「じはん」を先に処理しないと「じ」が先にマッチする
+    .replace(/(\d)じ/g, '$1時')
+    .replace(/(\d)ぷん/g, '$1分')
+    .replace(/(\d)ふん/g, '$1分');
+}
+
+/**
+ * 不正な日付のエラーメッセージを組み立てる
+ */
+function dateErrorMsg(month, day) {
+  const mo = parseInt(month, 10);
+  const d  = parseInt(day, 10);
+  if (mo < 1 || mo > 12) return '「' + mo + '月」は存在しません';
+  return '「' + mo + '月' + d + '日」は存在しません';
+}
+
+/**
  * "YYYY-MM-DD" に n 日を足す（月末・年末の繰り上がりは Date が処理する）
  */
 function addDays(dateStr, n) {
@@ -86,17 +114,20 @@ function parseDate(str, year) {
 }
 
 /**
- * テキストの1行を解析して予定オブジェクトに変換する
- * Python の dict に相当するオブジェクトを返す。解析できなければ null。
+ * テキストの1行を解析する（詳細版）
+ * 成功: { event: {...} } / 失敗: { error: '理由' } を返す。
+ * 失敗理由は画面の警告リストにそのまま表示される。
  */
-function parseLine(line, year) {
-  line = line.trim();
-  if (!line) return null;
+function parseLineDetailed(line, year) {
+  // 表記ゆれ（ひらがな・全角数字）を先に正規化してから解析する
+  line = normalizeKana(line.trim());
+  if (!line) return { error: '空行です' };
 
   let date = null, endDate = null, startTime = null, endTime = null;
   let title = '', location = null, description = null, allDay = false;
   let rest = line;
   let hasExplicitYear = false; // 年が明示されていたら adjustYear をスキップする
+  let dateErr = null;          // 日付の具体的なエラー理由（「4月31日は存在しません」など）
 
   // 相対日付の検出
   // 一昨昨日・一昨日など長い表現を先に書かないと、短い方が先にマッチしてしまう
@@ -129,10 +160,12 @@ function parseLine(line, year) {
 
     if (yearSlashM) {
       date = buildDate(yearSlashM[1], yearSlashM[2], yearSlashM[3]);
+      if (!date) dateErr = dateErrorMsg(yearSlashM[2], yearSlashM[3]);
       rest = rest.replace(yearSlashM[0], '').trim();
       hasExplicitYear = true;
     } else if (yearKanjiM) {
       date = buildDate(yearKanjiM[1], yearKanjiM[2], yearKanjiM[3]);
+      if (!date) dateErr = dateErrorMsg(yearKanjiM[2], yearKanjiM[3]);
       rest = rest.replace(yearKanjiM[0], '').trim();
       hasExplicitYear = true;
     } else {
@@ -141,6 +174,8 @@ function parseLine(line, year) {
       if (rangeDateM) {
         date    = buildDate(year, rangeDateM[1], rangeDateM[2]);
         endDate = buildDate(year, rangeDateM[1], rangeDateM[3]);
+        if (!date)         dateErr = dateErrorMsg(rangeDateM[1], rangeDateM[2]);
+        else if (!endDate) { dateErr = dateErrorMsg(rangeDateM[1], rangeDateM[3]); date = null; }
         rest = rest.replace(rangeDateM[0], '').trim();
         allDay = true;
       } else {
@@ -149,6 +184,7 @@ function parseLine(line, year) {
           const dm = rest.match(pat);
           if (dm) {
             date = parseDate(dm[0], year);
+            if (!date) dateErr = dateErrorMsg(dm[1], dm[2]);
             rest = rest.replace(dm[0], '').trim();
             break;
           }
@@ -156,7 +192,7 @@ function parseLine(line, year) {
       }
     }
   }
-  if (!date) return null;
+  if (!date) return { error: dateErr || '日付が見つかりません（例: 8/1、8月1日、明日）' };
 
   // 時刻範囲（例: 10:00-15:00 / 15時〜17時 / 12から15時 / 17 21）の検出
   // 区切り: ハイフン系・波ダッシュ系・から・空白（半角・全角）
@@ -168,7 +204,10 @@ function parseLine(line, year) {
     startTime = toHHMM(trM[1]);
     endTime   = toHHMM(trM[2]);
     // 「時」やコロン付きで明示された時刻が範囲外（30時・10:75 など）→ 誤記として行ごとエラー
-    if (!startTime || !endTime) return null;
+    if (!startTime || !endTime) {
+      const bad = !startTime ? trM[1] : trM[2];
+      return { error: '「' + bad + '」を時刻として認識できません（深夜表記は29時まで）' };
+    }
     rest = rest.replace(trM[0], '').trim();
   } else {
     // ② 開始側が数字のみの形式（例: 17 21 / 12から15時）
@@ -191,7 +230,9 @@ function parseLine(line, year) {
       const stM = rest.match(/\d{1,2}時(?:半|\d{0,2})|\d{1,2}[：:]\d{2}/);
       if (stM) {
         startTime = toHHMM(stM[0]);
-        if (!startTime) return null; // 「30時」など範囲外の明示時刻 → 誤記
+        if (!startTime) { // 「30時」など範囲外の明示時刻 → 誤記
+          return { error: '「' + stM[0] + '」を時刻として認識できません（深夜表記は29時まで）' };
+        }
         rest = rest.replace(stM[0], '').trim();
       }
     }
@@ -214,8 +255,11 @@ function parseLine(line, year) {
     let e = endTime !== null ? toMin(endTime) : null;
 
     if (e !== null && e <= s) {
-      if (e < 6 * 60) e += 24 * 60; // 深夜帯への日またぎとみなす
-      else return null;             // 誤記
+      if (e < 6 * 60) {
+        e += 24 * 60; // 深夜帯への日またぎとみなす
+      } else {
+        return { error: '終了時刻（' + endTime + '）が開始時刻（' + startTime + '）より前です' };
+      }
     }
     dayShiftStart = Math.floor(s / (24 * 60));
     if (e !== null) overnightEnd = Math.floor(e / (24 * 60)) - dayShiftStart;
@@ -276,12 +320,20 @@ function parseLine(line, year) {
   if (dayShiftStart > 0) date    = addDays(date, dayShiftStart);
   if (overnightEnd  > 0) endDate = addDays(date, overnightEnd);
 
-  return { title, date, endDate, startTime, endTime, location, description, allDay };
+  return { event: { title, date, endDate, startTime, endTime, location, description, allDay } };
+}
+
+/**
+ * テキストの1行を解析して予定オブジェクトに変換する（互換ラッパー）
+ * Python の dict に相当するオブジェクトを返す。解析できなければ null。
+ */
+function parseLine(line, year) {
+  return parseLineDetailed(line, year).event || null;
 }
 
 // Node.js のテスト（node --test）から require できるようにする。
 // ブラウザには module が存在しないため、この if はブラウザでは実行されない。
 // Python でいう if __name__ == "__main__": と似た「実行環境による分岐」
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { toHHMM, adjustYear, buildDate, parseDate, parseLine };
+  module.exports = { toHHMM, adjustYear, buildDate, parseDate, parseLine, parseLineDetailed, normalizeKana };
 }
