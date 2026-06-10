@@ -202,11 +202,26 @@ function saveEvent(i) {
   const startTime = document.getElementById('est-' + i).value || null;
   const endTime   = document.getElementById('eet-' + i).value || null;
   const endDate   = document.getElementById('eed-' + i).value || null;
+  const date      = document.getElementById('ed-' + i).value;
+
+  // 保存前のバリデーション。問題があれば保存せず編集フォームに留まる
+  if (!date) {
+    alert('日付を入力してください');
+    return;
+  }
+  if (endDate && endDate < date) {
+    alert('終了日は開始日以降にしてください');
+    return;
+  }
+  if (!allDay && startTime && endTime && endTime <= startTime) {
+    alert('終了時刻は開始時刻より後にしてください');
+    return;
+  }
 
   parsedEvents[i] = {
     ...parsedEvents[i],  // sourceLine・checked などの管理フィールドは引き継ぐ
     title:       document.getElementById('et-' + i).value.trim() || '予定',
-    date:        document.getElementById('ed-' + i).value,
+    date:        date,
     endDate:     endDate,
     startTime:   allDay ? null : startTime,
     endTime:     allDay ? null : endTime,

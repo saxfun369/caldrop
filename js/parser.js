@@ -169,6 +169,11 @@ function parseLine(line, year) {
   }
   if (!startTime) allDay = true;
 
+  // 終了が開始より前（「17時から15時」など）は誤記とみなし、行ごと解析失敗にする
+  // HH:MM 形式はゼロ埋め済みなので文字列比較で大小判定できる
+  // ※「22時から2時」のような日またぎ予定も現状は非対応（今後の課題）
+  if (startTime && endTime && endTime <= startTime) return null;
+
   // 余分な区切り文字を除去
   rest = rest.replace(/^[\s　\-　]+/, '').replace(/[\s　\-　]+$/, '');
 
@@ -182,15 +187,16 @@ function parseLine(line, year) {
   // 「場所：」「会場：」などのキーワード＋コロンで場所を検出
   // コロン必須にすることで「春場所」「会場入り」などの誤検出を防ぐ
   const locKeywords = '場所|会場|住所|集合|開催地';
-  const colonLocM = rest.match(new RegExp('(?:' + locKeywords + ')[：:]([^\\s　@（(]+)'));
+  const colonLocM = rest.match(new RegExp('(?:' + locKeywords + ')[：:]([^\\s　@＠（(]+)'));
   if (colonLocM) {
     location = colonLocM[1];
     rest = rest.replace(colonLocM[0], '').trim();
   }
 
   // @場所名 の検出（@以降の空白なしひとかたまりを場所として扱う）
+  // 半角 @ と全角 ＠ の両方に対応する
   if (!location) {
-    const atLocM = rest.match(/@([^\s　@（(]+)/);
+    const atLocM = rest.match(/[@＠]([^\s　@＠（(]+)/);
     if (atLocM) {
       location = atLocM[1];
       rest = rest.replace(atLocM[0], '').trim();
