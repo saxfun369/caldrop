@@ -20,7 +20,7 @@
   <!-- 入力ファースト：開いてすぐ書ける位置にテキストエリアを置く -->
   <label class="label" for="inputText">予定テキスト（1行1予定）</label>
   <textarea id="inputText" rows="9" placeholder="8月1日 10:00-15:00 散髪
-8/3 15時から17時 ジム
+8/3 15時から17時半 ジム
 8/20-22 夏休み旅行
 8月10日 健康診断
 今日 15:00 歯医者
@@ -60,37 +60,25 @@
   <details class="how-to">
     <summary class="how-to-summary">使い方と書き方のルール</summary>
     <div class="how-to-body">
-      <ol>
-        <li>予定を自由に入力（1行1予定）— 入力が止まると自動で解析されます</li>
-        <li>内容を確認・必要なら編集（<code>解析する</code> でいつでも再解析できます）</li>
-        <li><code>Googleカレンダーに登録</code> をクリック</li>
-      </ol>
-      <dl class="ex-prose">
-        <dt>日付</dt>
-        <dd><code>8月1日</code><code>8/1</code> のどちらの形式でも読み取ります。<br>
-        <code>今日</code> <code>明日</code> <code>昨日</code> などの相対表現も使えます。<br>
-        過去の日付は自動的に翌年に補正されます<br>
-        （例：6月に <code>4/5</code> と入力すると来年の4月5日になります）。<br>
-        過去の予定を登録したい場合は <code>2025/4/5</code> のように年を明記してください。</dd>
-
-        <dt>時刻</dt>
-        <dd><code>15時から17時</code> <code>17 21</code> など、区切り文字の種類は問いません。<br>
-        開始時間のみ指定した場合、終了は1時間後になります。</dd>
-
-        <dt>終日・複数日</dt>
-        <dd>時刻の記載がない場合は終日の予定として登録されます。<br>
-        <code>8/20-22</code> のように範囲指定で複数日指定が可能です。</dd>
-
-        <dt>場所</dt>
-        <dd><code>@渋谷オフィス</code> のように @ に続けて書くか、<code>会場：ホテル名</code> , <code>場所:駅名</code> のようにキーワード＋コロンで指定できます。</dd>
-
-        <dt>説明</dt>
-        <dd><code>（持ち物：PC）</code> <code>(スピーチあり)</code> のように丸括弧で囲むと説明として登録されます。</dd>
-      </dl>
+      <p class="how-to-lead">1行に1予定。入力が止まると自動で解析されるので、内容を確認して <code>Googleカレンダーに登録</code> を押すだけ。</p>
+      <div class="ex-list">
+        <div class="ex-row"><code>8/1 10:00-15:00 散髪</code><span>基本形：日付・時刻・タイトル</span></div>
+        <div class="ex-row"><code>8月3日 15時から17時半 ジム</code><span>漢字の日付、「15時」「17時半」もOK</span></div>
+        <div class="ex-row"><code>8/10 健康診断</code><span>時刻を書かなければ終日の予定</span></div>
+        <div class="ex-row"><code>8/20-22 夏休み旅行</code><span>複数日の予定</span></div>
+        <div class="ex-row"><code>明日 15時 歯医者</code><span>今日・明日・明後日なども使える</span></div>
+        <div class="ex-row"><code>9/10 結婚式 @ホテル （受付14時）</code><span>@で場所、丸括弧で説明・メモ</span></div>
+        <div class="ex-row"><code>2025/4/5 14:00 面談</code><span>年を書けば過去の予定も登録できる</span></div>
+      </div>
+      <ul class="how-to-notes">
+        <li>時刻の区切りは <code>-</code> <code>〜</code> <code>から</code> スペース のどれでも。終了を省くと1時間後になります</li>
+        <li>場所は <code>@渋谷</code> のほか <code>場所：渋谷</code>（会場・集合なども可）と書けます</li>
+        <li>過去の日付は自動で「来年」として扱われます（年を明記すれば過去のまま登録）</li>
+      </ul>
     </div>
   </details>
 
-  <div class="footer">CalDrop — 完全無料・登録不要・データ保存なし &nbsp;·&nbsp; <a href="/privacy.html">プライバシーポリシー</a><span class="footer-ver">v0.5.2</span></div>
+  <div class="footer">CalDrop — 完全無料・登録不要・データ保存なし &nbsp;·&nbsp; <a href="/privacy.html">プライバシーポリシー</a><span class="footer-ver">v0.6.0</span></div>
 </div>
 
 <!-- JS 読み込み順：依存関係の順番に並べる -->

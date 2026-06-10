@@ -29,6 +29,7 @@ test('toHHMM: 様々な表記を HH:MM に統一する', () => {
   assert.equal(toHHMM('10時30分'), '10:30');
   assert.equal(toHHMM('10:30'), '10:30');
   assert.equal(toHHMM('16時'), '16:00');
+  assert.equal(toHHMM('14時半'), '14:30');
   assert.equal(toHHMM('9'), '09:00');
 });
 
@@ -103,6 +104,20 @@ test('parseLine: 全角＠でも場所を認識する', () => {
   assert.equal(ev.title, '夜ご飯');
   assert.equal(ev.startTime, '16:00');
   assert.equal(ev.endTime, '19:00');
+});
+
+test('parseLine: 「半」表記（14時半）に対応する', () => {
+  const a = parseLine('8/1 14時半から16時 打ち合わせ', YEAR);
+  assert.equal(a.startTime, '14:30');
+  assert.equal(a.endTime, '16:00');
+  assert.equal(a.title, '打ち合わせ');
+  const b = parseLine('8/1 美容院 10時半', YEAR);
+  assert.equal(b.startTime, '10:30');
+  assert.equal(b.endTime, null);
+  assert.equal(b.title, '美容院');
+  const c = parseLine('8/1 9時半〜10時半 朝会', YEAR);
+  assert.equal(c.startTime, '09:30');
+  assert.equal(c.endTime, '10:30');
 });
 
 test('parseLine: 時刻なしは終日予定になる', () => {

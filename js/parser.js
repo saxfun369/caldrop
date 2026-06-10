@@ -11,9 +11,14 @@ function toHHMM(str) {
   if (!str) return null;
   str = str.replace(/：/g, ':').trim();
   let h = null, mi = null;
+  // 「14時半」→ 14:30（「半」は30分）。汎用パターンより先に判定する
+  const hanM = str.match(/(\d{1,2})時半/);
   // 「10時30分」「10:30」など 時 or : を含む形式
   const m = str.match(/(\d{1,2})[時:](\d{0,2})/);
-  if (m) {
+  if (hanM) {
+    h  = parseInt(hanM[1], 10);
+    mi = 30;
+  } else if (m) {
     h  = parseInt(m[1], 10);
     mi = parseInt(m[2] || '0', 10);
   } else {
@@ -142,12 +147,13 @@ function parseLine(line, year) {
   // 区切り: ハイフン系・波ダッシュ系・から・空白（半角・全角）
   // ① 開始側に「時」かコロンを含む形式。「夕食18時〜20時」のように
   //    単語に続けて書かれても拾えるよう、直前の文字は問わない
-  let trM = rest.match(/(\d{1,2}[時:：]\d{0,2})\s*(?:[-〜~～ー]|から|[ 　])\s*(\d{1,2}(?:[時:：]\d{0,2})?)/);
+  //    「時」の後ろは 半（=30分）または数字（14時半 / 14時30 / 14時）
+  let trM = rest.match(/(\d{1,2}(?:時(?:半|\d{0,2})|[:：]\d{0,2}))\s*(?:[-〜~～ー]|から|[ 　])\s*(\d{1,2}(?:時(?:半|\d{0,2})|[:：]\d{0,2})?)/);
   let trPrefix = '';
   if (!trM) {
     // ② 開始側が数字のみの形式（例: 17 21 / 12から15時）
     //    「会議室5 13時」の 5 を時刻と誤解釈しないよう、直前が行頭か空白の場合だけ許可する
-    const bareM = rest.match(/(^|[\s　])(\d{1,2})\s*(?:[-〜~～ー]|から|[ 　])\s*(\d{1,2}(?:[時:：]\d{0,2})?)/);
+    const bareM = rest.match(/(^|[\s　])(\d{1,2})\s*(?:[-〜~～ー]|から|[ 　])\s*(\d{1,2}(?:時(?:半|\d{0,2})|[:：]\d{0,2})?)/);
     if (bareM) {
       // ①と同じ形（[全体, 開始, 終了]）に組み替える。先頭の空白は replace 時に残す
       trM = [bareM[0], bareM[2], bareM[3]];
@@ -160,8 +166,8 @@ function parseLine(line, year) {
     rest = rest.replace(trM[0], trPrefix).trim();
   } else {
     // 開始時刻のみの検出
-    // 「16時」（分なし）も拾えるよう 時 は \d{0,2}、コロンは \d{2} を維持
-    const stM = rest.match(/\d{1,2}時\d{0,2}|\d{1,2}[：:]\d{2}/);
+    // 「16時」（分なし）「14時半」も拾えるよう 時 は 半|\d{0,2}、コロンは \d{2} を維持
+    const stM = rest.match(/\d{1,2}時(?:半|\d{0,2})|\d{1,2}[：:]\d{2}/);
     if (stM) {
       startTime = toHHMM(stM[0]);
       rest = rest.replace(stM[0], '').trim();
