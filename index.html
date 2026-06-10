@@ -61,24 +61,26 @@
     <summary class="how-to-summary">使い方と書き方のルール</summary>
     <div class="how-to-body">
       <p class="how-to-lead">1行に1予定。入力が止まると自動で解析されるので、内容を確認して <code>Googleカレンダーに登録</code> を押すだけ。</p>
-      <div class="ex-list">
-        <div class="ex-row"><code>8/1 10:00-15:00 散髪</code><span>基本形：日付・時刻・タイトル</span></div>
-        <div class="ex-row"><code>8月3日 15時から17時半 ジム</code><span>漢字の日付、「15時」「17時半」もOK</span></div>
-        <div class="ex-row"><code>8/10 健康診断</code><span>時刻を書かなければ終日の予定</span></div>
-        <div class="ex-row"><code>8/20-22 夏休み旅行</code><span>複数日の予定</span></div>
-        <div class="ex-row"><code>明日 15時 歯医者</code><span>今日・明日・明後日なども使える</span></div>
-        <div class="ex-row"><code>9/10 結婚式 @ホテル （受付14時）</code><span>@で場所、丸括弧で説明・メモ</span></div>
-        <div class="ex-row"><code>2025/4/5 14:00 面談</code><span>年を書けば過去の予定も登録できる</span></div>
-      </div>
-      <ul class="how-to-notes">
-        <li>時刻の区切りは <code>-</code> <code>〜</code> <code>から</code> スペース のどれでも。終了を省くと1時間後になります</li>
-        <li>場所は <code>@渋谷</code> のほか <code>場所：渋谷</code>（会場・集合なども可）と書けます</li>
-        <li>過去の日付は自動で「来年」として扱われます（年を明記すれば過去のまま登録）</li>
-      </ul>
+      <dl class="ex-prose">
+        <dt>日付</dt>
+        <dd><code>8月1日</code> <code>8/1</code> のどちらでも。<code>今日</code> <code>明日</code> <code>明後日</code> も使えます。<br>
+        <code>8/20-22</code> のような範囲指定で複数日の予定になります。<br>
+        過去の日付は自動で来年の予定として扱われます（<code>2025/4/5</code> のように年を書けば過去のまま登録）。</dd>
+
+        <dt>時刻</dt>
+        <dd><code>15:00</code> <code>15時</code> <code>15時半</code> に対応。区切りは <code>-</code> <code>〜</code> <code>から</code> スペース のどれでも。<br>
+        終了時刻を省くと1時間後まで、時刻を書かなければ終日の予定になります。</dd>
+
+        <dt>場所</dt>
+        <dd><code>@渋谷オフィス</code> のように @ に続けるか、<code>場所：渋谷駅</code>（会場・集合なども可）。</dd>
+
+        <dt>説明</dt>
+        <dd><code>（持ち物：PC）</code> のように丸括弧で囲んだ部分がメモとして登録されます。</dd>
+      </dl>
     </div>
   </details>
 
-  <div class="footer">CalDrop — 完全無料・登録不要・データ保存なし &nbsp;·&nbsp; <a href="/privacy.html">プライバシーポリシー</a><span class="footer-ver">v0.6.0</span></div>
+  <div class="footer">CalDrop — 完全無料・登録不要・データ保存なし &nbsp;·&nbsp; <a href="/privacy.html">プライバシーポリシー</a><span class="footer-ver">v0.6.1</span></div>
 </div>
 
 <!-- JS 読み込み順：依存関係の順番に並べる -->
