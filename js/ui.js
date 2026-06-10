@@ -26,10 +26,14 @@ function renderCard(i) {
   if (!card) return;
   const ev = parsedEvents[i];
 
-  const dateStr = ev.endDate ? ev.date + ' 〜 ' + ev.endDate : ev.date;
+  // 時刻ありの日またぎ（13時〜翌0時など）は「日付 〜 日付」ではなく「翌HH:MM」で表す
+  const overnight = !ev.allDay && ev.endDate && ev.endDate !== ev.date;
+  const dateStr = (ev.allDay && ev.endDate) ? ev.date + ' 〜 ' + ev.endDate : ev.date;
   const timeStr = ev.allDay
     ? '終日'
-    : (ev.startTime ? ev.startTime + (ev.endTime ? ' – ' + ev.endTime : '') : '時間未定');
+    : (ev.startTime
+        ? ev.startTime + (ev.endTime ? ' – ' + (overnight ? '翌' : '') + ev.endTime : '')
+        : '時間未定');
   // 絵文字は aria-hidden で隠し、スクリーンリーダーに読み上げさせない
   const icon = (e) => '<span aria-hidden="true">' + e + '</span> ';
   const locStr  = ev.location    ? '<span>' + icon('📍') + escHtml(ev.location)    + '</span>' : '';
@@ -213,8 +217,9 @@ function saveEvent(i) {
     alert('終了日は開始日以降にしてください');
     return;
   }
-  if (!allDay && startTime && endTime && endTime <= startTime) {
-    alert('終了時刻は開始時刻より後にしてください');
+  // 終了≦開始は原則エラー。ただし終了日が翌日以降なら日またぎとして許可する
+  if (!allDay && startTime && endTime && endTime <= startTime && (!endDate || endDate <= date)) {
+    alert('終了時刻は開始時刻より後にしてください（日をまたぐ場合は終了日を翌日にしてください）');
     return;
   }
 

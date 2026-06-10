@@ -266,8 +266,9 @@ function buildCalendarEvent(ev) {
     // 時刻あり：dateTime 形式。タイムゾーンは Asia/Tokyo を明示する
     const st  = ev.startTime || '09:00';
     // 終了未指定→開始の1時間後（23時台は翌日へ繰り上げ）。gcal.js の defaultEnd を共用
+    // endDate があれば日またぎ（13時〜翌0時など）として終了日に使う
     const end = ev.endTime
-      ? { date: ev.date, time: ev.endTime }
+      ? { date: ev.endDate || ev.date, time: ev.endTime }
       : defaultEnd(ev.date, st);
     return {
       ...base,

@@ -52,7 +52,7 @@ function makeGCalURL(ev) {
     // ダッシュ・コロンを含む形式は Google カレンダーが誤解析するため除去する
     const st  = ev.startTime || '09:00';
     const end = ev.endTime
-      ? { date: ev.date, time: ev.endTime }
+      ? { date: ev.endDate || ev.date, time: ev.endTime } // endDate があれば日またぎ
       : defaultEnd(ev.date, st); // 終了未指定→1時間後（23時台は翌日へ繰り上げ）
     const sCompact = ev.date.replace(/-/g, '')   + 'T' + st.replace(':', '')       + '00';
     const eCompact = end.date.replace(/-/g, '')  + 'T' + end.time.replace(':', '') + '00';

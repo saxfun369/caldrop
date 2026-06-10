@@ -27,9 +27,21 @@ function toHHMM(str) {
     if (n) { h = parseInt(n[1], 10); mi = 0; }
   }
   if (h === null) return null;
-  // 「25時」「10:75」など実在しない時刻は弾く
-  if (h > 23 || mi > 59) return null;
+  // 24〜29時は深夜表記（30時間制：26時=翌2時）として許容し、parseLine 側で日付に変換する。
+  // 30時以降・分の60以上は実在しない時刻として弾く
+  if (h > 29 || mi > 59) return null;
   return String(h).padStart(2, '0') + ':' + String(mi).padStart(2, '0');
+}
+
+/**
+ * "YYYY-MM-DD" に n 日を足す（月末・年末の繰り上がりは Date が処理する）
+ */
+function addDays(dateStr, n) {
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, mo - 1, d + n);
+  return dt.getFullYear() + '-'
+    + String(dt.getMonth() + 1).padStart(2, '0') + '-'
+    + String(dt.getDate()).padStart(2, '0');
 }
 
 /**
@@ -57,6 +69,9 @@ function buildDate(year, month, day) {
   const mo = parseInt(month, 10);
   const d  = parseInt(day, 10);
   if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  // 2月30日・4月31日など暦に存在しない日付は、Date が翌月に繰り上げる性質を使って検出する
+  const dt = new Date(parseInt(year, 10), mo - 1, d);
+  if (dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
   return year + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0');
 }
 
@@ -148,37 +163,65 @@ function parseLine(line, year) {
   // ① 開始側に「時」かコロンを含む形式。「夕食18時〜20時」のように
   //    単語に続けて書かれても拾えるよう、直前の文字は問わない
   //    「時」の後ろは 半（=30分）または数字（14時半 / 14時30 / 14時）
-  let trM = rest.match(/(\d{1,2}(?:時(?:半|\d{0,2})|[:：]\d{0,2}))\s*(?:[-〜~～ー]|から|[ 　])\s*(\d{1,2}(?:時(?:半|\d{0,2})|[:：]\d{0,2})?)/);
-  let trPrefix = '';
-  if (!trM) {
+  const trM = rest.match(/(\d{1,2}(?:時(?:半|\d{0,2})|[:：]\d{0,2}))\s*(?:[-〜~～ー]|から|[ 　])\s*(\d{1,2}(?:時(?:半|\d{0,2})|[:：]\d{0,2})?)/);
+  if (trM) {
+    startTime = toHHMM(trM[1]);
+    endTime   = toHHMM(trM[2]);
+    // 「時」やコロン付きで明示された時刻が範囲外（30時・10:75 など）→ 誤記として行ごとエラー
+    if (!startTime || !endTime) return null;
+    rest = rest.replace(trM[0], '').trim();
+  } else {
     // ② 開始側が数字のみの形式（例: 17 21 / 12から15時）
     //    「会議室5 13時」の 5 を時刻と誤解釈しないよう、直前が行頭か空白の場合だけ許可する
     const bareM = rest.match(/(^|[\s　])(\d{1,2})\s*(?:[-〜~～ー]|から|[ 　])\s*(\d{1,2}(?:時(?:半|\d{0,2})|[:：]\d{0,2})?)/);
     if (bareM) {
-      // ①と同じ形（[全体, 開始, 終了]）に組み替える。先頭の空白は replace 時に残す
-      trM = [bareM[0], bareM[2], bareM[3]];
-      trPrefix = bareM[1];
+      const s0 = toHHMM(bareM[2]);
+      const e0 = toHHMM(bareM[3]);
+      // 数字だけの組は、両方が時刻として妥当な場合のみ時刻範囲として扱う
+      //（「30 40」のような数字はタイトルの一部としてそのまま残す）
+      if (s0 && e0) {
+        startTime = s0;
+        endTime   = e0;
+        rest = rest.replace(bareM[0], bareM[1]).trim();
+      }
     }
-  }
-  if (trM) {
-    startTime = toHHMM(trM[1]);
-    endTime   = toHHMM(trM[2]);
-    rest = rest.replace(trM[0], trPrefix).trim();
-  } else {
-    // 開始時刻のみの検出
-    // 「16時」（分なし）「14時半」も拾えるよう 時 は 半|\d{0,2}、コロンは \d{2} を維持
-    const stM = rest.match(/\d{1,2}時(?:半|\d{0,2})|\d{1,2}[：:]\d{2}/);
-    if (stM) {
-      startTime = toHHMM(stM[0]);
-      rest = rest.replace(stM[0], '').trim();
+    if (!startTime) {
+      // 開始時刻のみの検出
+      // 「16時」（分なし）「14時半」も拾えるよう 時 は 半|\d{0,2}、コロンは \d{2} を維持
+      const stM = rest.match(/\d{1,2}時(?:半|\d{0,2})|\d{1,2}[：:]\d{2}/);
+      if (stM) {
+        startTime = toHHMM(stM[0]);
+        if (!startTime) return null; // 「30時」など範囲外の明示時刻 → 誤記
+        rest = rest.replace(stM[0], '').trim();
+      }
     }
   }
   if (!startTime) allDay = true;
 
-  // 終了が開始より前（「17時から15時」など）は誤記とみなし、行ごと解析失敗にする
-  // HH:MM 形式はゼロ埋め済みなので文字列比較で大小判定できる
-  // ※「22時から2時」のような日またぎ予定も現状は非対応（今後の課題）
-  if (startTime && endTime && endTime <= startTime) return null;
+  // --- 深夜表記・日またぎの正規化 ---
+  // ・24〜29時（30時間制）は翌日の 0〜5時に変換する（例: 26時 → 翌2時）
+  // ・終了が開始以前でも、終了が深夜帯（0:00〜5:59）なら翌日とみなす（例: 22時から2時）
+  //   それ以外（17時から15時 など）は誤記として行ごとエラー
+  // 日付のずらし量だけここで計算し、年補正が終わった後（関数末尾）で適用する
+  let dayShiftStart = 0; // 開始日のずらし日数（25時開始 → +1日）
+  let overnightEnd  = 0; // 終了が開始の何日後か（13時〜翌0時 → 1）
+  if (startTime) {
+    // "HH:MM" ⇄ 0時からの通算分。数値にすると大小比較と日数計算が単純になる
+    const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+    const fmt   = (min) => String(Math.floor(min / 60) % 24).padStart(2, '0')
+                         + ':' + String(min % 60).padStart(2, '0');
+    let s = toMin(startTime);
+    let e = endTime !== null ? toMin(endTime) : null;
+
+    if (e !== null && e <= s) {
+      if (e < 6 * 60) e += 24 * 60; // 深夜帯への日またぎとみなす
+      else return null;             // 誤記
+    }
+    dayShiftStart = Math.floor(s / (24 * 60));
+    if (e !== null) overnightEnd = Math.floor(e / (24 * 60)) - dayShiftStart;
+    startTime = fmt(s);
+    if (e !== null) endTime = fmt(e);
+  }
 
   // 余分な区切り文字を除去
   rest = rest.replace(/^[\s　\-　]+/, '').replace(/[\s　\-　]+$/, '');
@@ -227,6 +270,11 @@ function parseLine(line, year) {
     date    = adjustYear(date, year);
     endDate = adjustYear(endDate, year);
   }
+
+  // 深夜表記・日またぎによる日付のずらしは、年補正が終わってから適用する
+  // （先にずらすと「開始日は過去・終了日は今日」のように補正がちぐはぐになるため）
+  if (dayShiftStart > 0) date    = addDays(date, dayShiftStart);
+  if (overnightEnd  > 0) endDate = addDays(date, overnightEnd);
 
   return { title, date, endDate, startTime, endTime, location, description, allDay };
 }
