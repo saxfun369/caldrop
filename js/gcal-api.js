@@ -12,6 +12,7 @@ let tokenClient       = null;
 let accessToken       = null;
 let tokenExpiry       = 0;   // トークンの有効期限（ミリ秒のタイムスタンプ）
 let silentAuthTimeout = null; // スマホ対応：サイレント認証の無応答を検知するタイマー
+let isSilentAuth      = false; // prompt:'none' で試行中かどうか（popup_closed の判別に使う）
 
 /**
  * localStorage に保存したトークンをページ読み込み時に復元する
@@ -46,16 +47,35 @@ function initGoogleAuth() {
  * ブラウザは「クリック直後の短い時間」しかポップアップを許可しないため、
  * 自動再試行のタイミング次第でブロックされることがある。
  * ブロックを検出したら、ユーザーのクリック直下で再試行できるボタンを表示する。
+ *
+ * popup_closed はふたつの原因がある：
+ *   - サイレント認証（prompt:'none'）の失敗：ユーザーの操作なしに発生
+ *   - ユーザーが手動で認証ウィンドウを閉じた
+ * isSilentAuth フラグで区別し、前者は「自動認証失敗」として再試行ボタンを表示する
  */
 function handleAuthError(err) {
+  const wasSilent = isSilentAuth;
+  isSilentAuth = false;
   if (silentAuthTimeout) { clearTimeout(silentAuthTimeout); silentAuthTimeout = null; }
 
   if (err && err.type === 'popup_failed_to_open') {
     showAuthRetry('認証ポップアップがブロックされました。下のボタンからもう一度開いてください。');
     return;
   }
-  // popup_closed など：ユーザーが認証ウィンドウを閉じた
-  showRegisterResult('Google認証がキャンセルされました', 'err');
+  if (err && err.type === 'popup_closed') {
+    if (wasSilent) {
+      // サイレント認証ポップアップが閉じた＝Googleセッション切れなどで自動認証不可
+      // → フラグをクリアして通常フローへ誘導する
+      localStorage.removeItem('caldrop_authorized');
+      showAuthRetry('Googleへの自動ログインに失敗しました。下のボタンから認証してください。');
+    } else {
+      // ユーザーが手動で認証ウィンドウを閉じた → 再試行できるようボタンを出す
+      showAuthRetry('認証がキャンセルされました。続けるには下のボタンを押してください。');
+    }
+    return;
+  }
+  // その他の予期しないエラー
+  showRegisterResult('Google認証エラー: ' + (err?.type || '不明'), 'err');
   resetRegisterBtn();
 }
 
@@ -83,6 +103,7 @@ function hideAuthRetry() {
  * ポップアップブロックの対象にならない
  */
 function retryAuth() {
+  isSilentAuth = false;
   hideAuthRetry();
   showRegisterResult('', '');
   const btn = document.getElementById('registerBtn');
@@ -96,6 +117,7 @@ function retryAuth() {
  */
 function handleTokenResponse(response) {
   // サイレント認証のタイムアウトタイマーをキャンセル（応答が来たので不要）
+  isSilentAuth = false;
   if (silentAuthTimeout) { clearTimeout(silentAuthTimeout); silentAuthTimeout = null; }
 
   if (response.error) {
@@ -167,7 +189,9 @@ function startRegistration() {
     // → 4秒以内に応答がなければ localStorage フラグを削除して通常フローに切り替える
     //   （クリックから4秒後はポップアップがブロックされやすいが、
     //     その場合は error_callback が検出して再試行ボタンを表示する）
+    isSilentAuth = true;
     silentAuthTimeout = setTimeout(() => {
+      isSilentAuth = false;
       silentAuthTimeout = null;
       localStorage.removeItem('caldrop_authorized');
       tokenClient.requestAccessToken();
@@ -175,6 +199,7 @@ function startRegistration() {
     tokenClient.requestAccessToken({ prompt: 'none' });
   } else {
     // 初回のみ通常フロー（アカウント選択 + 同意画面あり）
+    isSilentAuth = false;
     tokenClient.requestAccessToken();
   }
 }
