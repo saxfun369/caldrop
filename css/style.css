@@ -84,7 +84,9 @@ textarea {
   transition: border-color 0.15s;
 }
 textarea:focus { border-color: var(--text); }
-textarea::placeholder { color: var(--text-sub); opacity: 0.6; }
+/* 記載例（プレースホルダー）は本文よりひと回り小さく表示する。
+   入力欄本体のフォントは触らないので iOS の自動ズーム対策（16px）と両立できる */
+textarea::placeholder { color: var(--text-sub); opacity: 0.6; font-size: 13px; }
 
 .btn-row { display: flex; gap: 12px; align-items: center; margin: 12px 0 24px; }
 
